@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/*
+ * Two visual systems live in one codebase (docs/UX.md §1).
+ *
+ *   --guest-*     editorial, warm, generous — the wedding website
+ *   --organiser-* neutral, dense, functional — the dashboard
+ *
+ * Client weddings re-skin by overriding these tokens, never by forking components.
+ * Contrast pairings here meet WCAG 2.2 AA; wedding palettes drift pale, so any
+ * override must be re-checked rather than assumed.
+ */
+@theme {
+  --font-guest-display: ui-serif, Georgia, 'Times New Roman', serif;
+  --font-guest-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-organiser: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-guest-bg: oklch(0.99 0.005 90);
+  --color-guest-surface: oklch(0.97 0.008 85);
+  --color-guest-ink: oklch(0.25 0.015 60);
+  --color-guest-muted: oklch(0.48 0.012 60);
+  --color-guest-accent: oklch(0.52 0.08 25);
+  --color-guest-border: oklch(0.89 0.01 80);
+
+  --color-organiser-bg: oklch(0.98 0.002 250);
+  --color-organiser-surface: oklch(1 0 0);
+  --color-organiser-ink: oklch(0.22 0.01 260);
+  --color-organiser-muted: oklch(0.5 0.015 260);
+  --color-organiser-accent: oklch(0.5 0.15 265);
+  --color-organiser-border: oklch(0.9 0.005 260);
+
+  --color-status-attending: oklch(0.55 0.12 150);
+  --color-status-declined: oklch(0.55 0.15 25);
+  --color-status-pending: oklch(0.62 0.11 75);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Never remove a focus indicator without providing a replacement (docs/UX.md §7). */
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

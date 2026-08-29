@@ -1,0 +1,225 @@
+# Implementation Plan
+
+Working checklist. **Only tick a box when the behaviour is implemented AND verified**
+(see Definition of Done in `CLAUDE.md`). Keep this current — a fresh session resumes from
+this file, not from conversation history.
+
+Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
+
+---
+
+## Phase 0 — Engineering foundation
+
+### 0.1 Planning artefacts
+
+- [x] Inspect repository, confirm empty
+- [x] Verify package versions against the npm registry (not copied from the brief)
+- [x] `docs/DECISIONS.md` — ADR-001..010
+- [x] `docs/ARCHITECTURE.md`
+- [x] `docs/DATA_MODEL.md` + Mermaid ER diagram
+- [x] `docs/SECURITY.md` + threat model
+- [x] `docs/PRODUCT_SPEC.md`
+- [x] `docs/UX.md` + page map
+- [x] `docs/IMPLEMENTATION_PLAN.md`
+- [x] `docs/CLIENT_DEPLOYMENT.md`
+- [x] Root `CLAUDE.md`
+- [x] `.claude/` skills, rules, agents
+
+### 0.2 Scaffold
+- [x] `package.json`, pnpm, Node/pnpm version pinning
+- [x] Next.js 16 App Router + TypeScript strict (`noUncheckedIndexedAccess` on)
+- [x] Payload 3.88 wired into Next (`(payload)` route group, `payload.config.ts`)
+- [x] Postgres adapter + `DATABASE_URL`
+- [x] `.env.example`; `.env` confirmed git-ignored
+- [x] Tailwind 4 + design tokens for the two visual systems
+- [~] shadcn/ui primitives + Lucide — deps installed (`lucide-react`, `clsx`, `cva`,
+      `tailwind-merge`); components added in Phase 1 when first needed
+- [~] Route groups — `(guest)` and `(payload)` exist; `(organiser)` lands in Phase 1
+- [x] `src/domain/` boundary enforced by ESLint `no-restricted-imports`
+
+### 0.3 Developer environment
+- [x] `docker-compose.yml` for Postgres (dev, port 5433 to avoid collisions)
+- [~] Migration commands — `pnpm payload migrate` wired; dev uses `push`. First real
+      migration is generated in Phase 1 with the first schema change
+- [x] `/api/health` endpoint (app + database readiness)
+- [~] README quickstart — verified against a local Postgres; the Docker path is
+      unverified on this machine because the Docker daemon needs an admin password
+
+### 0.4 Quality gates
+- [x] ESLint 9 + eslint-config-next 16 flat config (+ domain boundary rule)
+- [x] Prettier
+- [x] Vitest 4 + React Testing Library
+- [x] Playwright 1.62 (Chromium + WebKit; guest experience is iPhone-first)
+- [x] `pnpm verify` composite script — **passing**
+- [~] GitHub Actions CI written (lint, typecheck, test, build, E2E, secret scan);
+      not yet executed — the repository has no remote
+- [x] Secret scanning step (gitleaks) in CI
+
+**Phase 0 verification (2026-08-29):** `pnpm verify` passes end to end; 6/6 Playwright
+tests pass on Chromium and WebKit; `/api/health` reports `database: ok`; Payload created
+its schema in PostgreSQL; guest page renders with the guest theme.
+
+---
+
+## Phase 1 — Wedding & organiser foundation
+
+- [ ] `Users` collection with roles `admin | organiser | viewer`
+- [ ] Access-control helpers (`isAdmin`, `isOrganiser`, `isAnyone`) + unit tests
+- [ ] Restrict Payload Admin to `admin`
+- [ ] `/login` + session handling
+- [ ] `requireOrganiser()` guard for layouts and route handlers
+- [ ] Middleware protecting `/dashboard/*`
+- [ ] Test: anonymous request to organiser API is rejected
+- [ ] Test: `viewer` cannot mutate
+- [ ] `WeddingSettings` global
+- [ ] `getWeddingSettings()` domain accessor (**only** read path)
+- [ ] Feature flag helper + tests
+- [ ] Dashboard shell: nav, layout, auth state
+- [ ] First-run setup checklist / empty state
+- [ ] `AuditEvents` collection + `recordAuditEvent()`
+
+---
+
+## Phase 2 — Guests
+
+- [ ] `InvitationParties` collection
+- [ ] `Guests` collection (party FK, cascade delete)
+- [ ] `Tags` collection + many-to-many
+- [ ] Guest CRUD UI
+- [ ] Party CRUD UI + guest assignment
+- [ ] Plus-one configuration
+- [ ] Search (indexed, debounced)
+- [ ] Filters incl. attending/declined/awaiting/dietary/missing-meal/unassigned/table/party/tag
+- [ ] URL-reflected filter state
+- [ ] Sorting
+- [ ] Bulk actions (tag, assign table, delete)
+- [ ] CSV export
+- [ ] CSV import with validation, preview, and per-row error reporting
+- [ ] Tests: import edge cases (duplicates, malformed rows, missing columns, encoding)
+
+---
+
+## Phase 3 — Invitations & RSVP ← first end-to-end vertical slice
+
+- [ ] `generateInvitationToken()` — 32 random bytes, base64url
+- [ ] `hashInvitationToken()` — SHA-256
+- [ ] Unique index on `tokenHash`
+- [ ] `tokenVersion` + rotation
+- [ ] `findPartyByToken()` — indexed lookup, generic failure
+- [ ] Test: valid token resolves the correct party
+- [ ] Test: invalid / malformed / rotated tokens all fail identically
+- [ ] Test: token never appears in an API response or log
+- [ ] Organiser invitation-link screen + copy + rotate
+- [ ] Rate limiter (interface + in-process impl) on `/invite` and `/api/rsvp`
+- [ ] `/invite/[token]` page — party-scoped, `noindex`, `no-referrer`
+- [ ] RSVP form: per-guest attend/decline, dietary, allergies, accessibility, plus-one
+      details, message to couple, contact confirmation
+- [ ] Zod schemas shared client/server; **server-side validation authoritative**
+- [ ] `submitRsvp()` in a single transaction
+- [ ] Party status derivation (`pending | partial | complete`) + tests
+- [ ] Deadline enforced server-side + test
+- [ ] Confirmation screen; editable until deadline
+- [ ] Dashboard RSVP statistics reflecting submissions
+- [ ] Audit event on submission
+- [ ] **E2E:** organiser creates party → invitation generated → guest RSVPs →
+      organiser sees it → wrong token blocked
+
+---
+
+## Phase 4 — Wedding website
+
+- [ ] Guest layout, typography, and theme tokens
+- [ ] Landing + countdown (timezone-correct)
+- [ ] Ceremony / reception / venue / maps / travel / parking / accommodation
+- [ ] Itinerary (guest view)
+- [ ] FAQs
+- [ ] Contacts (respecting visibility)
+- [ ] Section visibility driven by settings
+- [ ] Organiser website content editor
+- [ ] Responsive + accessibility pass (WCAG 2.2 AA)
+- [ ] Lighthouse check on mobile
+
+---
+
+## Phase 5 — Menu
+
+- [ ] `MenuCourses` + `MenuOptions` collections
+- [ ] Meal selections with `UNIQUE (guest, course)`
+- [ ] Children's menu eligibility rule + tests
+- [ ] Menu configuration UI
+- [ ] Selection capture in the RSVP flow
+- [ ] Totals, missing selections, dietary and allergy report
+- [ ] Caterer export
+
+---
+
+## Phase 6 — Seating
+
+- [ ] `Tables` collection
+- [ ] Assignment via `Guest.table`
+- [ ] Planner UI: unassigned pane + table cards
+- [ ] dnd-kit drag and drop
+- [ ] **Keyboard-accessible assignment path** + live-region announcements
+- [ ] Occupancy and over-capacity warnings (warn, never block)
+- [ ] Tests: capacity, unassigned query, move semantics
+
+---
+
+## Phase 7 — Photo queue
+
+- [ ] `PhotoGroups` + membership
+- [ ] `PhotoQueueState` global with revision counter
+- [ ] State machine `queued → get_ready → now → completed | skipped` + transition tests
+- [ ] Group management UI
+- [ ] Wedding-day controller (Previous / Call Next / Complete / Skip)
+- [ ] `RealtimeTransport` abstraction + in-process SSE implementation
+- [ ] `/api/photo-queue/stream` SSE endpoint
+- [ ] Guest queue screen (NOW / UP NEXT / YOUR GROUP / distance)
+- [ ] Reconnection + revision-based resync
+- [ ] Polling fallback
+- [ ] Tests: transitions, nearest-group calculation, reconnect resync
+
+---
+
+## Phase 8 — Notifications
+
+- [ ] `NotificationProvider` interface
+- [ ] Console provider (dev/CI, no network, no cost)
+- [ ] Resend email provider
+- [ ] Twilio SMS provider
+- [ ] `Notifications` collection with `UNIQUE dedupeKey`
+- [ ] Async dispatch queue + retry with backoff
+- [ ] Photo-queue alerts ("you're next", "make your way over")
+- [ ] SMS consent flag enforced before send
+- [ ] Tests: dedupe under concurrency, retry, failure recording
+
+---
+
+## Phase 9 — Production readiness
+
+- [ ] Production Dockerfile (multi-stage, non-root, standalone output)
+- [ ] Production `docker-compose.yml` + Caddyfile
+- [ ] Structured logging + token/PII redaction (tested)
+- [ ] Error reporting wrapper (Sentry-ready)
+- [ ] Backup + verified restore procedure
+- [ ] Full security review pass
+- [ ] Deployment smoke tests
+- [ ] CI/CD pipeline
+- [ ] `docs/CLIENT_DEPLOYMENT.md` validated by an actual dry run
+
+---
+
+## Cross-cutting
+
+- [ ] Deterministic seed data — Sarah & Adam, 20–30 guests, mixed RSVP states, dietary
+      needs, menu, tables, itinerary, contacts, photo groups
+- [ ] Seed script guarded against running in production
+- [ ] Keep this file, ADRs, and docs current as work lands
+
+## Backlog
+
+Themes · custom domains · QR invitations · WhatsApp · check-in · guest photo uploads ·
+galleries · checklists · vendors · budget · registry · multi-event · multilingual · PWA ·
+push · analytics · SaaS multi-tenancy.
+
+Any guest search feature must satisfy the enumeration constraints in `docs/SECURITY.md` §3.
