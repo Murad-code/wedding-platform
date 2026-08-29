@@ -30,6 +30,18 @@ export const guestResponseSchema = z.object({
   dietaryRequirements: freeText(500),
   allergies: freeText(500),
   accessibilityNeeds: freeText(500),
+  // Course and option ids are validated against the actual menu server-side; the shape
+  // check here only keeps obvious junk out (see domain/menu/menu.ts).
+  mealSelections: z
+    .array(
+      z.object({
+        courseId: z.number().int().positive(),
+        optionId: z.number().int().positive(),
+      }),
+    )
+    .max(20)
+    .optional()
+    .default([]),
 })
 
 export const rsvpSubmissionSchema = z.object({

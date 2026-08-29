@@ -130,3 +130,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   invitation lookups are unthrottled, failed ones are throttled per IP, and RSVP
   submissions are throttled per token (ADR-016). The previous per-IP limit would have
   locked out a venue full of guests on one wifi connection.
+
+### Added (Phase 5 — menu)
+
+- `MenuCourses`, `MenuOptions`, and `GuestMealSelections`, the last with a real
+  `UNIQUE (guest, course)` index (ADR-017).
+- Meal choices in the RSVP flow, offered per attending guest and validated server-side
+  against the real menu — an option posted against the wrong course, or a children's
+  course posted by an adult, is rejected.
+- Organiser menu configuration with dietary flags, live choice tallies, a "still to
+  choose" chase list, and a dietary and allergy report.
+- Caterer CSV export: one row per attending guest with their choices spelled out.
+- Public `/menu` page, shown only when the menu feature is enabled.
+
+### Fixed
+
+- Deleting a guest left their meal choices behind as orphan rows that would still have
+  been counted in the caterer's totals.
+- Declining after choosing a meal now clears the choice, so nothing is plated for someone
+  who is not coming.

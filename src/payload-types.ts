@@ -71,6 +71,9 @@ export interface Config {
     'invitation-parties': InvitationParty;
     guests: Guest;
     tags: Tag;
+    'menu-courses': MenuCourse;
+    'menu-options': MenuOption;
+    'guest-meal-selections': GuestMealSelection;
     'itinerary-items': ItineraryItem;
     'wedding-contacts': WeddingContact;
     media: Media;
@@ -86,6 +89,9 @@ export interface Config {
     'invitation-parties': InvitationPartiesSelect<false> | InvitationPartiesSelect<true>;
     guests: GuestsSelect<false> | GuestsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    'menu-courses': MenuCoursesSelect<false> | MenuCoursesSelect<true>;
+    'menu-options': MenuOptionsSelect<false> | MenuOptionsSelect<true>;
+    'guest-meal-selections': GuestMealSelectionsSelect<false> | GuestMealSelectionsSelect<true>;
     'itinerary-items': ItineraryItemsSelect<false> | ItineraryItemsSelect<true>;
     'wedding-contacts': WeddingContactsSelect<false> | WeddingContactsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -257,6 +263,59 @@ export interface Tag {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-courses".
+ */
+export interface MenuCourse {
+  id: number;
+  name: string;
+  description?: string | null;
+  /**
+   * Lower numbers appear first.
+   */
+  order: number;
+  /**
+   * Guests must choose from this course before their reply is complete.
+   */
+  required?: boolean | null;
+  /**
+   * Offered only to guests marked as children.
+   */
+  childrenOnly?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-options".
+ */
+export interface MenuOption {
+  id: number;
+  name: string;
+  description?: string | null;
+  course: number | MenuCourse;
+  order: number;
+  isVegetarian?: boolean | null;
+  isVegan?: boolean | null;
+  isGlutenFree?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * What each guest chose. Written by the RSVP form and the dashboard.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guest-meal-selections".
+ */
+export interface GuestMealSelection {
+  id: number;
+  guest: number | Guest;
+  course: number | MenuCourse;
+  option: number | MenuOption;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * The order of the day.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -406,6 +465,18 @@ export interface PayloadLockedDocument {
         value: number | Tag;
       } | null)
     | ({
+        relationTo: 'menu-courses';
+        value: number | MenuCourse;
+      } | null)
+    | ({
+        relationTo: 'menu-options';
+        value: number | MenuOption;
+      } | null)
+    | ({
+        relationTo: 'guest-meal-selections';
+        value: number | GuestMealSelection;
+      } | null)
+    | ({
         relationTo: 'itinerary-items';
         value: number | ItineraryItem;
       } | null)
@@ -534,6 +605,45 @@ export interface GuestsSelect<T extends boolean = true> {
  */
 export interface TagsSelect<T extends boolean = true> {
   name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-courses_select".
+ */
+export interface MenuCoursesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  order?: T;
+  required?: T;
+  childrenOnly?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-options_select".
+ */
+export interface MenuOptionsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  course?: T;
+  order?: T;
+  isVegetarian?: T;
+  isVegan?: T;
+  isGlutenFree?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guest-meal-selections_select".
+ */
+export interface GuestMealSelectionsSelect<T extends boolean = true> {
+  guest?: T;
+  course?: T;
+  option?: T;
   updatedAt?: T;
   createdAt?: T;
 }

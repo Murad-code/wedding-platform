@@ -2,11 +2,14 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { guestsBelongToParty, type RsvpSubmissionInput } from '@/domain/rsvp/schema'
+import { validateSelections, type MenuCourse } from '@/domain/menu/menu'
 import { derivePartyStatus, isRsvpStatus, type RsvpStatus } from '@/domain/rsvp/status'
+import { replaceSelections } from '@/lib/menu'
 import { recordAuditEvent } from '@/lib/audit'
 import type { ResolvedParty } from '@/lib/invitations'
 
-export type RsvpResult = { ok: true } | { ok: false; reason: 'closed' | 'foreign-guest' | 'failed' }
+export type RsvpResult =
+  { ok: true } | { ok: false; reason: 'closed' | 'foreign-guest' | 'invalid-meal' | 'failed' }
 
 /**
  * Persists a party's RSVP.
@@ -18,10 +21,13 @@ export type RsvpResult = { ok: true } | { ok: false; reason: 'closed' | 'foreign
 export async function submitRsvp({
   party,
   submission,
+  menu = [],
   ip,
 }: {
   party: ResolvedParty
   submission: RsvpSubmissionInput
+  /** Empty when the menu feature is off, in which case choices are ignored. */
+  menu?: readonly MenuCourse[]
   ip?: string | null
 }): Promise<RsvpResult> {
   const partyGuestIds = party.guests.map((guest) => guest.id)
@@ -29,6 +35,25 @@ export async function submitRsvp({
   // The token proves which party you are, not which guests you may write.
   if (!guestsBelongToParty(submission.guests, partyGuestIds)) {
     return { ok: false, reason: 'foreign-guest' }
+  }
+
+  // Meal choices are checked against the real menu: a guest can post any ids they like,
+  // so "this option belongs to this course" and "this course is offered to this guest"
+  // cannot be inferred from the form.
+  if (menu.length > 0) {
+    for (const response of submission.guests) {
+      const guest = party.guests.find((candidate) => candidate.id === response.guestId)
+      if (!guest) continue
+      // Only attending guests eat; choices from a declining guest are simply dropped.
+      if (response.rsvpStatus !== 'attending') continue
+
+      const problems = validateSelections({
+        courses: menu,
+        ageGroup: guest.ageGroup,
+        selections: response.mealSelections ?? [],
+      })
+      if (problems.length > 0) return { ok: false, reason: 'invalid-meal' }
+    }
   }
 
   const payload = await getPayload({ config })
@@ -61,6 +86,16 @@ export async function submitRsvp({
           respondedAt,
         },
       })
+
+      if (menu.length > 0) {
+        // A guest who switches to "declined" has their choices cleared, so the caterer
+        // never plates for someone who is not coming.
+        await replaceSelections(
+          response.guestId,
+          response.rsvpStatus === 'attending' ? (response.mealSelections ?? []) : [],
+          transactionID,
+        )
+      }
     }
 
     // Guests not included in this submission keep their existing status, so an edit

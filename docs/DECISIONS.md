@@ -325,3 +325,27 @@ per-account, because passwords are low-entropy and that threat genuinely is addr
 
 **Found by:** the test suite exceeding the platform's own limit — a useful reminder that
 load-shaped bugs surface under parallel tests before they surface in production.
+
+---
+
+## ADR-017 — Meal selections are their own collection
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** A guest's meal choices could have been an array field on `Guest`. The data
+model committed to `UNIQUE (guest, course)` because both the RSVP form and the organiser
+dashboard write them.
+
+**Decision.** `GuestMealSelections` is a separate collection with a compound unique index
+on `(guest, course)`.
+
+**Rationale.** An array field gives no database constraint; enforcing "one choice per
+course" in a hook would not survive two concurrent writers, which is exactly the case the
+constraint exists for. Verified present in Postgres as `guest_course_idx`, rather than
+assumed from the config.
+
+**Consequences.** Writing choices is delete-then-insert inside the RSVP transaction,
+which is the only way to express "these are now the choices" including a course the guest
+has backed out of. Payload's foreign keys are `ON DELETE SET NULL`, so `Guests`,
+`MenuCourses`, and `MenuOptions` all delete dependent selections explicitly — otherwise a
+deleted guest's meal would still be counted in the caterer's totals.

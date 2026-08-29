@@ -201,15 +201,33 @@ Verified visually at 430px: landing, timeline, and contacts.
 
 ---
 
-## Phase 5 — Menu
+## Phase 5 — Menu ✅
 
-- [ ] `MenuCourses` + `MenuOptions` collections
-- [ ] Meal selections with `UNIQUE (guest, course)`
-- [ ] Children's menu eligibility rule + tests
-- [ ] Menu configuration UI
-- [ ] Selection capture in the RSVP flow
-- [ ] Totals, missing selections, dietary and allergy report
-- [ ] Caterer export
+- [x] `MenuCourses` + `MenuOptions` collections, publicly readable (the menu is content;
+      guests' _choices_ are not)
+- [x] `GuestMealSelections` with a real `UNIQUE (guest, course)` index — verified in
+      Postgres as `guest_course_idx`, not merely declared in config
+- [x] Children's menu eligibility rule + tests
+- [x] Menu configuration UI (courses, options, dietary flags)
+- [x] Selection capture in the RSVP flow, per attending guest
+- [x] Server-side validation of every choice against the real menu
+- [x] Totals, missing selections, dietary and allergy report
+- [x] Caterer CSV export — one row per attending guest, authorised, never cached
+- [x] Public `/menu` page, shown only when the feature is enabled
+
+**Supports all four menu models from the brief without special cases:** a fixed menu is a
+course with one option, selectable courses are the normal case, "no advance selection" is
+the `menu` feature switched off, and a children's menu is a course marked `childrenOnly`.
+
+**Fixed during this phase:**
+
+- Deleting a guest left their meal choices behind. Payload's foreign keys are
+  `ON DELETE SET NULL`, so the orphaned rows would still have been counted in the
+  caterer's totals.
+
+**Phase 5 verification (2026-08-30):** `pnpm verify` passes; 219 unit tests and 144
+Playwright tests across Chromium and WebKit. Verified visually that an adult is not
+offered the children's menu and a child is.
 
 ---
 

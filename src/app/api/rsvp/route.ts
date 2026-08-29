@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { rsvpSubmissionSchema } from '@/domain/rsvp/schema'
 import { isRsvpOpen } from '@/domain/wedding/settings'
 import { findPartyByToken } from '@/lib/invitations'
+import { getMenu } from '@/lib/menu'
 import { clientIp, rsvpAddressLimiter, rsvpTokenLimiter } from '@/lib/rate-limit'
 import { submitRsvp } from '@/lib/rsvp'
 import { getWeddingSettings } from '@/lib/wedding'
@@ -66,11 +67,15 @@ export async function POST(request: Request) {
     return badRequest('Some of those answers were not valid. Please check and try again.')
   }
 
-  const result = await submitRsvp({ party, submission: parsed.data, ip })
+  const menu = settings.features.menu ? await getMenu() : []
+  const result = await submitRsvp({ party, submission: parsed.data, menu, ip })
 
   if (!result.ok) {
     if (result.reason === 'foreign-guest') {
       return badRequest('That response did not match your invitation.')
+    }
+    if (result.reason === 'invalid-meal') {
+      return badRequest('One of those meal choices is not available. Please check and try again.')
     }
     return Response.json(
       { error: 'We could not save your response. Please try again.' },

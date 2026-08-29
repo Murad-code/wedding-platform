@@ -32,6 +32,7 @@ export default async function DashboardPage() {
         <nav aria-label="Dashboard sections" className="flex flex-wrap gap-2">
           {[
             { href: '/dashboard/guests', label: 'Guest list' },
+            { href: '/dashboard/menu', label: 'Menu' },
             { href: '/dashboard/itinerary', label: 'Itinerary' },
             { href: '/dashboard/contacts', label: 'Contacts' },
             { href: '/dashboard/settings', label: 'Wedding settings' },

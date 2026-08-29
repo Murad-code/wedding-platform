@@ -1,4 +1,5 @@
 import type { ItineraryEntry } from '@/domain/itinerary/item'
+import type { MealSelection, MenuCourse } from '@/domain/menu/menu'
 import type { WeddingSettingsView } from '@/domain/wedding/settings'
 import type { ResolvedParty } from '@/lib/invitations'
 
@@ -24,12 +25,16 @@ export function InvitationView({
   rsvpOpen,
   token,
   itinerary = [],
+  menu = [],
+  selections = {},
 }: {
   party: ResolvedParty
   settings: WeddingSettingsView
   rsvpOpen: boolean
   token: string
   itinerary?: ItineraryEntry[]
+  menu?: MenuCourse[]
+  selections?: Record<number, MealSelection[]>
 }) {
   const date = formatWeddingDate(settings.weddingDate, settings.timezone)
   const hasResponded = party.respondedAt !== null
@@ -97,7 +102,13 @@ export function InvitationView({
         </h2>
 
         {rsvpOpen ? (
-          <RsvpForm party={party} token={token} hasResponded={hasResponded} />
+          <RsvpForm
+            party={party}
+            token={token}
+            hasResponded={hasResponded}
+            menu={menu}
+            selections={selections}
+          />
         ) : (
           <p className="mt-4 rounded-xl border border-guest-border bg-guest-surface p-4 text-guest-muted">
             The RSVP deadline has passed. Please contact the couple directly if you need to change

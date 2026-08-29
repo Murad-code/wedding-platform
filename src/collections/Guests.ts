@@ -110,5 +110,20 @@ export const Guests: CollectionConfig = {
       admin: { readOnly: true },
     },
   ],
+  hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        // Payload's foreign keys are ON DELETE SET NULL, so without this a deleted
+        // guest would leave their meal choices behind with a null guest — orphan rows
+        // that would still be counted in the caterer's totals.
+        await req.payload.delete({
+          collection: 'guest-meal-selections',
+          where: { guest: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+      },
+    ],
+  },
   timestamps: true,
 }

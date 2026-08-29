@@ -6,6 +6,7 @@ import { InvitationView } from '@/components/guest/invitation-view'
 import { isRsvpOpen } from '@/domain/wedding/settings'
 import { clientIp, invitationFailureLimiter } from '@/lib/rate-limit'
 import { findPartyByToken } from '@/lib/invitations'
+import { getMenu, getSelectionsForGuests } from '@/lib/menu'
 import { getItinerary } from '@/lib/wedding-content'
 import { getWeddingSettings } from '@/lib/wedding'
 
@@ -38,6 +39,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   // filtered out server-side and never reach the browser.
   const itinerary = settings.features.itinerary ? await getItinerary('invited') : []
 
+  const menu = settings.features.menu ? await getMenu() : []
+  const selections = settings.features.menu
+    ? await getSelectionsForGuests(party.guests.map((guest) => guest.id))
+    : new Map()
+
   return (
     <InvitationView
       party={party}
@@ -45,6 +51,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       rsvpOpen={isRsvpOpen(settings)}
       token={token}
       itinerary={itinerary}
+      menu={menu}
+      selections={Object.fromEntries(selections)}
     />
   )
 }

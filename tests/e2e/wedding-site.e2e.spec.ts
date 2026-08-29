@@ -3,7 +3,28 @@ import { randomUUID } from 'node:crypto'
 import type { Page } from '@playwright/test'
 
 import type { TestAccount } from './support/accounts'
-import { expect, test } from './support/fixtures'
+import { expect, test as base } from './support/fixtures'
+
+/**
+ * Itinerary items and contacts are shared, guest-visible content. A test that fails
+ * partway would otherwise leave its row on the real wedding site, so the id is handed
+ * out by a fixture that removes anything carrying it afterwards — cleanup that runs even
+ * when the test itself does not reach its own delete step.
+ */
+const test = base.extend<{ id: string }>({
+  id: async ({ page }, use) => {
+    const id = `T${randomUUID().slice(0, 8)}`
+    await use(id)
+    await Promise.all([
+      page.request
+        .delete(`/api/itinerary-items?where[title][contains]=${id}`)
+        .catch(() => undefined),
+      page.request
+        .delete(`/api/wedding-contacts?where[name][contains]=${id}`)
+        .catch(() => undefined),
+    ])
+  },
+})
 
 async function signIn(page: Page, account: Pick<TestAccount, 'email' | 'password'>) {
   await page.goto('/login')
@@ -11,10 +32,6 @@ async function signIn(page: Page, account: Pick<TestAccount, 'email' | 'password
   await page.getByLabel('Password').fill(account.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/dashboard/)
-}
-
-function scope() {
-  return `T${randomUUID().slice(0, 8)}`
 }
 
 test.describe('wedding website', () => {
@@ -111,8 +128,7 @@ test.describe('itinerary visibility', () => {
     expect(await page.content()).not.toContain('Speeches')
   })
 
-  test('guests-only items appear on a personal invitation', async ({ page, accounts }) => {
-    const id = scope()
+  test('guests-only items appear on a personal invitation', async ({ page, accounts, id }) => {
     await signIn(page, accounts.organiser)
 
     await page.goto('/dashboard/parties')
@@ -181,8 +197,7 @@ test.describe('organiser content editing', () => {
     await expect(page).toHaveURL(/denied=1/)
   })
 
-  test('an organiser can add and remove an itinerary item', async ({ page, accounts }) => {
-    const id = scope()
+  test('an organiser can add and remove an itinerary item', async ({ page, accounts, id }) => {
     await signIn(page, accounts.organiser)
     await page.goto('/dashboard/itinerary')
 
@@ -199,8 +214,7 @@ test.describe('organiser content editing', () => {
     await expect(page.getByRole('listitem').filter({ hasText: id })).toHaveCount(0)
   })
 
-  test('a hidden contact is never sent to the guest page', async ({ page, accounts }) => {
-    const id = scope()
+  test('a hidden contact is never sent to the guest page', async ({ page, accounts, id }) => {
     await signIn(page, accounts.organiser)
     await page.goto('/dashboard/contacts')
 
@@ -216,8 +230,7 @@ test.describe('organiser content editing', () => {
     expect(await page.content()).not.toContain('900555')
   })
 
-  test('making a contact visible publishes it', async ({ page, accounts }) => {
-    const id = scope()
+  test('making a contact visible publishes it', async ({ page, accounts, id }) => {
     await signIn(page, accounts.organiser)
     await page.goto('/dashboard/contacts')
 

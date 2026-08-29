@@ -8,8 +8,11 @@ import sharp from 'sharp'
 
 import { AuditEvents } from './collections/AuditEvents'
 import { Guests } from './collections/Guests'
+import { GuestMealSelections } from './collections/GuestMealSelections'
 import { InvitationParties } from './collections/InvitationParties'
 import { ItineraryItems } from './collections/ItineraryItems'
+import { MenuCourses } from './collections/MenuCourses'
+import { MenuOptions } from './collections/MenuOptions'
 import { Media } from './collections/Media'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
@@ -33,6 +36,9 @@ export default buildConfig({
     InvitationParties,
     Guests,
     Tags,
+    MenuCourses,
+    MenuOptions,
+    GuestMealSelections,
     ItineraryItems,
     WeddingContacts,
     Media,

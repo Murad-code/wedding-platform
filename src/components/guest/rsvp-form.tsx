@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { coursesForGuest, type MealSelection, type MenuCourse } from '@/domain/menu/menu'
 import type { RsvpStatus } from '@/domain/rsvp/status'
 import type { ResolvedParty } from '@/lib/invitations'
 
@@ -11,9 +12,14 @@ type GuestAnswer = {
   dietaryRequirements: string
   allergies: string
   accessibilityNeeds: string
+  /** Chosen option id per course id. */
+  meals: Record<number, number>
 }
 
-function initialAnswers(party: ResolvedParty): Record<number, GuestAnswer> {
+function initialAnswers(
+  party: ResolvedParty,
+  selections: Record<number, MealSelection[]>,
+): Record<number, GuestAnswer> {
   return Object.fromEntries(
     party.guests.map((guest) => [
       guest.id,
@@ -22,6 +28,9 @@ function initialAnswers(party: ResolvedParty): Record<number, GuestAnswer> {
         dietaryRequirements: guest.dietaryRequirements ?? '',
         allergies: guest.allergies ?? '',
         accessibilityNeeds: guest.accessibilityNeeds ?? '',
+        meals: Object.fromEntries(
+          (selections[guest.id] ?? []).map((s) => [s.courseId, s.optionId]),
+        ),
       },
     ]),
   )
@@ -31,13 +40,19 @@ export function RsvpForm({
   party,
   token,
   hasResponded,
+  menu = [],
+  selections = {},
 }: {
   party: ResolvedParty
   token: string
   hasResponded: boolean
+  menu?: MenuCourse[]
+  selections?: Record<number, MealSelection[]>
 }) {
   const router = useRouter()
-  const [answers, setAnswers] = useState<Record<number, GuestAnswer>>(() => initialAnswers(party))
+  const [answers, setAnswers] = useState<Record<number, GuestAnswer>>(() =>
+    initialAnswers(party, selections),
+  )
   const [message, setMessage] = useState(party.messageToCouple ?? '')
   const [email, setEmail] = useState(party.contactEmail ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -86,6 +101,10 @@ export function RsvpForm({
           dietaryRequirements: answer!.dietaryRequirements,
           allergies: answer!.allergies,
           accessibilityNeeds: answer!.accessibilityNeeds,
+          mealSelections: Object.entries(answer!.meals).map(([courseId, optionId]) => ({
+            courseId: Number(courseId),
+            optionId,
+          })),
         })),
       }),
     })
@@ -164,6 +183,52 @@ export function RsvpForm({
                     dietary requirement for a meal they are not eating. */}
                 {attending ? (
                   <div className="mt-5 space-y-4">
+                    {coursesForGuest(menu, guest.ageGroup).map((course) => (
+                      <fieldset key={course.id}>
+                        <legend className="text-sm font-medium">
+                          {course.name}
+                          {course.required ? null : (
+                            <span className="ml-1 text-guest-muted">(optional)</span>
+                          )}
+                        </legend>
+                        {course.description ? (
+                          <p className="mt-0.5 text-sm text-guest-muted">{course.description}</p>
+                        ) : null}
+                        <div className="mt-2 space-y-2">
+                          {course.options.map((option) => (
+                            <label
+                              key={option.id}
+                              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-sm ${
+                                answer.meals[course.id] === option.id
+                                  ? 'border-guest-ink/40 bg-guest-bg'
+                                  : 'border-guest-border'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`meal-${guest.id}-${course.id}`}
+                                checked={answer.meals[course.id] === option.id}
+                                onChange={() =>
+                                  setAnswer(guest.id, {
+                                    meals: { ...answer.meals, [course.id]: option.id },
+                                  })
+                                }
+                                className="mt-1"
+                              />
+                              <span>
+                                <span className="font-medium">{option.name}</span>
+                                {option.description ? (
+                                  <span className="block text-guest-muted">
+                                    {option.description}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
+
                     <Field
                       id={`diet-${guest.id}`}
                       label="Dietary requirements"
