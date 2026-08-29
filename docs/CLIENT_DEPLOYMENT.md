@@ -9,7 +9,12 @@ client can later be moved to their own infrastructure without code changes.
 
 > Status: the workflow below is the target process. Steps depending on Phase 9 artefacts
 > (production Dockerfile, Caddyfile, CI) are marked **[pending Phase 9]** and this
-> document is validated by a dry run as part of that phase.
+> document is validated by a full dry run as part of that phase.
+>
+> Verified so far (2026-08-29): provisioning PostgreSQL via Compose from an empty
+> database, Payload creating its schema, the bootstrap organiser account (§8), the health
+> check, and volume persistence across a container restart. Steps 5, 6, and 9 onwards
+> remain unverified.
 
 ## 1. Create the client repository
 

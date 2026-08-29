@@ -34,18 +34,22 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
 - [x] `.env.example`; `.env` confirmed git-ignored
 - [x] Tailwind 4 + design tokens for the two visual systems
 - [~] shadcn/ui primitives + Lucide — deps installed (`lucide-react`, `clsx`, `cva`,
-  `tailwind-merge`); components added in Phase 1 when first needed
+  `tailwind-merge`) and a `cn()` helper is in use; no shadcn components have been
+  generated yet, as hand-written components have covered every case so far
 - [x] Route groups — `(guest)`, `(organiser)`, `(payload)`
 - [x] `src/domain/` boundary enforced by ESLint `no-restricted-imports`
 
 ### 0.3 Developer environment
 
 - [x] `docker-compose.yml` for Postgres (dev, port 5433 to avoid collisions)
-- [~] Migration commands — `pnpm payload migrate` wired; dev uses `push`. First real
-  migration is generated in Phase 1 with the first schema change
+- [~] Migration commands — `pnpm payload migrate` is wired and development uses Payload's
+  `push`. No migration is committed yet; the first is generated before the first real
+  deployment (Phase 9), which is also when the migrate-on-deploy step gets exercised
 - [x] `/api/health` endpoint (app + database readiness)
-- [~] README quickstart — verified against a local Postgres; the Docker path is
-  unverified on this machine because the Docker daemon needs an admin password
+- [x] README quickstart — **verified end to end** against a clean `postgres:17-alpine`
+      via `pnpm db:up`: empty database → Payload created all 17 tables → `/api/health`
+      healthy → `pnpm create-admin` → full test suite green. Data survived a container
+      restart, confirming the named volume
 
 ### 0.4 Quality gates
 
@@ -58,9 +62,13 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
   not yet executed — the repository has no remote
 - [x] Secret scanning step (gitleaks) in CI
 
-**Phase 0 verification (2026-08-29):** `pnpm verify` passes end to end; 6/6 Playwright
-tests pass on Chromium and WebKit; `/api/health` reports `database: ok`; Payload created
-its schema in PostgreSQL; guest page renders with the guest theme.
+**Phase 0 verification (2026-08-29):** `pnpm verify` passes end to end; Playwright green
+on Chromium and WebKit; `/api/health` reports `database: ok`; Payload created its schema;
+guest page renders with the guest theme.
+
+**Re-verified on the documented Docker path (2026-08-29):** the whole suite — 148 unit
+tests and 84 Playwright tests — passes against a clean `postgres:17-alpine` started with
+`pnpm db:up`, from an empty database.
 
 ---
 

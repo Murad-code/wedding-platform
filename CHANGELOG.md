@@ -95,3 +95,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Exported values beginning `=`, `+`, `-`, or `@` are escaped, closing a CSV injection
   vector and preventing spreadsheets from evaluating guest data as formulas.
 - Import re-parses the uploaded file server-side rather than trusting the previewed rows.
+
+### Verified
+
+- The documented quickstart now runs end to end on `postgres:17-alpine` via `pnpm db:up`:
+  an empty database, Payload creating its schema, `pnpm create-admin`, and the full test
+  suite green. Data survives a container restart, confirming the named volume.
