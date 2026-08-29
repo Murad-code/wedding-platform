@@ -1,0 +1,114 @@
+import type { CollectionConfig } from 'payload'
+
+import { authenticated, mutator } from '@/domain/auth/access'
+import { AGE_GROUPS } from '@/domain/guests/guest'
+import { RSVP_STATUSES } from '@/domain/rsvp/status'
+
+/**
+ * An individual invited person.
+ *
+ * Guest records hold personal data, including dietary, allergy, and accessibility
+ * information that is special-category data under GDPR. Read access is restricted to
+ * signed-in organisers; the guest-facing invitation page reaches guests only through a
+ * server-side, token-resolved query (docs/SECURITY.md §7).
+ */
+export const Guests: CollectionConfig = {
+  slug: 'guests',
+  access: {
+    read: authenticated,
+    create: mutator,
+    update: mutator,
+    delete: mutator,
+  },
+  admin: {
+    useAsTitle: 'lastName',
+    defaultColumns: ['firstName', 'lastName', 'party', 'rsvpStatus', 'ageGroup'],
+    description: 'Individual guests. Every guest belongs to one invitation party.',
+  },
+  fields: [
+    {
+      type: 'row',
+      fields: [
+        { name: 'firstName', type: 'text', required: true, admin: { width: '50%' } },
+        { name: 'lastName', type: 'text', admin: { width: '50%' } },
+      ],
+    },
+    {
+      name: 'party',
+      type: 'relationship',
+      relationTo: 'invitation-parties',
+      required: true,
+      index: true,
+      admin: { description: 'The group this guest was invited with.' },
+    },
+    {
+      name: 'rsvpStatus',
+      type: 'select',
+      required: true,
+      defaultValue: 'pending',
+      index: true,
+      options: RSVP_STATUSES.map((value) => ({
+        label: value.charAt(0).toUpperCase() + value.slice(1),
+        value,
+      })),
+    },
+    {
+      name: 'ageGroup',
+      type: 'select',
+      required: true,
+      defaultValue: 'adult',
+      options: AGE_GROUPS.map((value) => ({
+        label: value.charAt(0).toUpperCase() + value.slice(1),
+        value,
+      })),
+      admin: { description: 'Drives children’s menu eligibility and catering counts.' },
+    },
+    {
+      name: 'isPlusOne',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { description: 'A placeholder seat the inviting guest may name later.' },
+    },
+    {
+      type: 'row',
+      fields: [
+        { name: 'email', type: 'email', admin: { width: '50%' } },
+        { name: 'phone', type: 'text', admin: { width: '50%' } },
+      ],
+    },
+    {
+      name: 'dietaryRequirements',
+      type: 'textarea',
+      maxLength: 500,
+    },
+    {
+      name: 'allergies',
+      type: 'textarea',
+      maxLength: 500,
+      admin: { description: 'Surfaced prominently to organisers and in the caterer export.' },
+    },
+    {
+      name: 'accessibilityNeeds',
+      type: 'textarea',
+      maxLength: 500,
+    },
+    {
+      name: 'tags',
+      type: 'relationship',
+      relationTo: 'tags',
+      hasMany: true,
+    },
+    {
+      name: 'internalNotes',
+      type: 'textarea',
+      maxLength: 1000,
+      admin: { description: 'Never shown to guests.' },
+    },
+    {
+      name: 'respondedAt',
+      type: 'date',
+      admin: { readOnly: true },
+    },
+  ],
+  timestamps: true,
+}

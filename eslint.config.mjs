@@ -53,7 +53,12 @@ const eslintConfig = [
   },
   {
     files: ['scripts/**/*.ts', 'tests/**/*.ts', 'tests/**/*.tsx'],
-    rules: { 'no-console': 'off' },
+    rules: {
+      'no-console': 'off',
+      // Playwright fixtures take a callback named `use`, which the React Hooks rule
+      // mistakes for a hook.
+      'react-hooks/rules-of-hooks': 'off',
+    },
   },
   {
     ignores: [

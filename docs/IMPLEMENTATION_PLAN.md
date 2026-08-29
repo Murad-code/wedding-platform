@@ -97,47 +97,56 @@ editor UI (`/dashboard/settings` is linked but not yet built).
 
 ## Phase 2 — Guests
 
-- [ ] `InvitationParties` collection
-- [ ] `Guests` collection (party FK, cascade delete)
-- [ ] `Tags` collection + many-to-many
-- [ ] Guest CRUD UI
-- [ ] Party CRUD UI + guest assignment
-- [ ] Plus-one configuration
-- [ ] Search (indexed, debounced)
-- [ ] Filters incl. attending/declined/awaiting/dietary/missing-meal/unassigned/table/party/tag
-- [ ] URL-reflected filter state
-- [ ] Sorting
+- [x] `InvitationParties` collection (cascade-deletes its guests)
+- [x] `Guests` collection (party FK, indexed on party and RSVP status)
+- [x] `Tags` collection + many-to-many
+- [x] Create party / add guest via authorised server actions
+- [x] Party list and party detail screens with empty states
+- [ ] Full guest CRUD UI (edit, archive, plus-one configuration)
+- [ ] Search, filters, sorting, URL-reflected filter state
 - [ ] Bulk actions (tag, assign table, delete)
 - [ ] CSV export
-- [ ] CSV import with validation, preview, and per-row error reporting
-- [ ] Tests: import edge cases (duplicates, malformed rows, missing columns, encoding)
+- [ ] CSV import with validation, preview, and per-row errors
+- [ ] Tests: import edge cases (duplicates, malformed rows, encoding)
+- [ ] Pagination on the party list (currently capped at 200)
+
+**Status:** the data model and the write paths needed by the vertical slice are done and
+verified. The guest-management surface (search, filters, bulk, CSV) is not yet built.
 
 ---
 
-## Phase 3 — Invitations & RSVP ← first end-to-end vertical slice
+## Phase 3 — Invitations & RSVP ← first end-to-end vertical slice ✅
 
-- [ ] `generateInvitationToken()` — 32 random bytes, base64url
-- [ ] `hashInvitationToken()` — SHA-256
-- [ ] Unique index on `tokenHash`
-- [ ] `tokenVersion` + rotation
-- [ ] `findPartyByToken()` — indexed lookup, generic failure
-- [ ] Test: valid token resolves the correct party
-- [ ] Test: invalid / malformed / rotated tokens all fail identically
-- [ ] Test: token never appears in an API response or log
-- [ ] Organiser invitation-link screen + copy + rotate
-- [ ] Rate limiter (interface + in-process impl) on `/invite` and `/api/rsvp`
-- [ ] `/invite/[token]` page — party-scoped, `noindex`, `no-referrer`
-- [ ] RSVP form: per-guest attend/decline, dietary, allergies, accessibility, plus-one
-      details, message to couple, contact confirmation
-- [ ] Zod schemas shared client/server; **server-side validation authoritative**
-- [ ] `submitRsvp()` in a single transaction
-- [ ] Party status derivation (`pending | partial | complete`) + tests
-- [ ] Deadline enforced server-side + test
-- [ ] Confirmation screen; editable until deadline
-- [ ] Dashboard RSVP statistics reflecting submissions
-- [ ] Audit event on submission
-- [ ] **E2E:** organiser creates party → invitation generated → guest RSVPs →
+- [x] `generateInvitationToken()` — 32 random bytes, base64url
+- [x] `hashInvitationToken()` — SHA-256
+- [x] Unique index on `tokenHash`; field unreadable through the API
+- [x] `tokenVersion` + rotation via "create a new link"
+- [x] `findPartyByToken()` — indexed lookup, generic failure for every failure mode
+- [x] `isPlausibleToken()` shape guard keeps scanning traffic off the database
+- [x] Test: valid token resolves the correct party
+- [x] Test: invalid / malformed / rotated tokens all fail identically
+- [x] Test: token hash never appears in an API response
+- [x] Organiser invitation-link screen (shown once, never stored)
+- [x] Rate limiter (interface + in-process) on `/invite` and `/api/rsvp`
+- [x] `/invite/[token]` page — party-scoped, `noindex`, `no-referrer`, not cacheable
+- [x] RSVP form: per-guest attend/decline, dietary, allergies, accessibility,
+      message to couple, contact confirmation
+- [x] Zod schemas shared client/server; **server-side validation authoritative**
+- [x] `submitRsvp()` in a single transaction
+- [x] Party status derivation (`pending | partial | complete`) + tests
+- [x] Deadline enforced server-side (`isRsvpOpen`) + tests
+- [x] Confirmation state; editable until the deadline
+- [x] Dashboard RSVP statistics reflecting submissions
+- [x] Audit event on submission (counts only — no names, contacts, or health data)
+- [x] **E2E:** organiser creates party → invitation generated → guest RSVPs →
       organiser sees it → wrong token blocked
+
+**Milestone verified (2026-08-29):** all twelve acceptance criteria in
+`docs/PRODUCT_SPEC.md` §6 pass. 94 unit tests and 54 Playwright tests across Chromium and
+WebKit, green on three consecutive full runs.
+
+**Deferred:** plus-one self-naming on the RSVP form, and the meal-selection step
+(Phase 5, gated on the menu feature).
 
 ---
 

@@ -68,6 +68,9 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    'invitation-parties': InvitationParty;
+    guests: Guest;
+    tags: Tag;
     media: Media;
     'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
@@ -78,6 +81,9 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    'invitation-parties': InvitationPartiesSelect<false> | InvitationPartiesSelect<true>;
+    guests: GuestsSelect<false> | GuestsSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -152,6 +158,99 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Households and groups invited together.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invitation-parties".
+ */
+export interface InvitationParty {
+  id: number;
+  /**
+   * How this group is addressed, e.g. “The Kamali Family”.
+   */
+  displayName: string;
+  tokenHash?: string | null;
+  /**
+   * Incremented on rotation so old links stop working.
+   */
+  tokenVersion?: number | null;
+  /**
+   * Derived from the guests’ individual responses.
+   */
+  status: 'pending' | 'partial' | 'complete';
+  /**
+   * How many extra guests this party may bring.
+   */
+  plusOnesAllowed?: number | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  /**
+   * Left by the party when they responded.
+   */
+  messageToCouple?: string | null;
+  /**
+   * Only ever visible to organisers.
+   */
+  internalNotes?: string | null;
+  /**
+   * When the invitation link was shared.
+   */
+  invitedAt?: string | null;
+  respondedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Individual guests. Every guest belongs to one invitation party.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guests".
+ */
+export interface Guest {
+  id: number;
+  firstName: string;
+  lastName?: string | null;
+  /**
+   * The group this guest was invited with.
+   */
+  party: number | InvitationParty;
+  rsvpStatus: 'pending' | 'attending' | 'declined';
+  /**
+   * Drives children’s menu eligibility and catering counts.
+   */
+  ageGroup: 'adult' | 'child' | 'infant';
+  /**
+   * A placeholder seat the inviting guest may name later.
+   */
+  isPlusOne?: boolean | null;
+  email?: string | null;
+  phone?: string | null;
+  dietaryRequirements?: string | null;
+  /**
+   * Surfaced prominently to organisers and in the caterer export.
+   */
+  allergies?: string | null;
+  accessibilityNeeds?: string | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Never shown to guests.
+   */
+  internalNotes?: string | null;
+  respondedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -242,6 +341,18 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'invitation-parties';
+        value: number | InvitationParty;
+      } | null)
+    | ({
+        relationTo: 'guests';
+        value: number | Guest;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -314,6 +425,56 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invitation-parties_select".
+ */
+export interface InvitationPartiesSelect<T extends boolean = true> {
+  displayName?: T;
+  tokenHash?: T;
+  tokenVersion?: T;
+  status?: T;
+  plusOnesAllowed?: T;
+  contactEmail?: T;
+  contactPhone?: T;
+  messageToCouple?: T;
+  internalNotes?: T;
+  invitedAt?: T;
+  respondedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guests_select".
+ */
+export interface GuestsSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  party?: T;
+  rsvpStatus?: T;
+  ageGroup?: T;
+  isPlusOne?: T;
+  email?: T;
+  phone?: T;
+  dietaryRequirements?: T;
+  allergies?: T;
+  accessibilityNeeds?: T;
+  tags?: T;
+  internalNotes?: T;
+  respondedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

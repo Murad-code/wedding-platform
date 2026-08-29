@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, Mail, Users2 } from 'lucide-react'
+import { CalendarDays, Mail, TriangleAlert, Users2 } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
@@ -6,6 +6,7 @@ import { SetupChecklist } from '@/components/organiser/setup-checklist'
 import { StatCard } from '@/components/organiser/stat-card'
 import { daysUntilWedding } from '@/domain/wedding/settings'
 import { requireOrganiser } from '@/lib/auth/session'
+import { getDashboardTotals } from '@/lib/guests'
 import { getWeddingSettings } from '@/lib/wedding'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const session = await requireOrganiser()
-  const settings = await getWeddingSettings()
+  const [settings, totals] = await Promise.all([getWeddingSettings(), getDashboardTotals()])
 
   const days = daysUntilWedding(settings)
 
@@ -28,12 +29,20 @@ export default async function DashboardPage() {
             Signed in as {session.name || session.email}
           </p>
         </div>
-        <Link
-          href="/dashboard/settings"
-          className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
-        >
-          Wedding settings
-        </Link>
+        <nav className="flex gap-2">
+          <Link
+            href="/dashboard/parties"
+            className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
+          >
+            Guest list
+          </Link>
+          <Link
+            href="/dashboard/settings"
+            className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
+          >
+            Wedding settings
+          </Link>
+        </nav>
       </header>
 
       {settings.isConfigured ? null : <SetupChecklist className="mt-8" />}
@@ -49,13 +58,23 @@ export default async function DashboardPage() {
             value={days === null ? '—' : days >= 0 ? String(days) : 'Wedding has passed'}
             hint={settings.weddingDate ? undefined : 'Add the date in wedding settings'}
           />
-          <StatCard icon={Users2} label="Guests invited" value="—" hint="Coming in Phase 2" />
-          <StatCard icon={Mail} label="Awaiting RSVP" value="—" hint="Coming in Phase 3" />
           <StatCard
-            icon={ClipboardList}
-            label="Seating unassigned"
-            value="—"
-            hint="Coming in Phase 6"
+            icon={Users2}
+            label="Guests invited"
+            value={String(totals.invited)}
+            hint={`across ${totals.parties} ${totals.parties === 1 ? 'party' : 'parties'}`}
+          />
+          <StatCard
+            icon={Mail}
+            label="Awaiting RSVP"
+            value={String(totals.pending)}
+            hint={`${totals.attending} attending · ${totals.declined} declined`}
+          />
+          <StatCard
+            icon={TriangleAlert}
+            label="Dietary alerts"
+            value={String(totals.dietaryAlerts)}
+            hint={totals.dietaryAlerts > 0 ? 'Review before the caterer deadline' : undefined}
           />
         </div>
       </section>

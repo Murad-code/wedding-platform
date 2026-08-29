@@ -3,7 +3,7 @@ import 'dotenv/config'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
-import { TEST_ACCOUNTS } from './support/accounts'
+import { allTestAccounts } from './support/accounts'
 
 /**
  * Ensures the organiser accounts the E2E suite signs in with exist.
@@ -18,7 +18,7 @@ export default async function globalSetup() {
 
   const payload = await getPayload({ config })
 
-  for (const account of Object.values(TEST_ACCOUNTS)) {
+  for (const account of allTestAccounts()) {
     const existing = await payload.find({
       collection: 'users',
       where: { email: { equals: account.email } },

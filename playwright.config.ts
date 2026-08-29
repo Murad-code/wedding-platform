@@ -22,9 +22,13 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
-    command: 'pnpm dev',
+    // Tests run against a production build, not `next dev`. Compile-on-demand in dev
+    // makes the first hit to each route slow enough to time out when projects run in
+    // parallel, and the production artifact is what actually ships.
+    // Point PLAYWRIGHT_BASE_URL at a running dev server to iterate faster.
+    command: 'pnpm build && pnpm start',
     reuseExistingServer: !process.env.CI,
     url: baseURL,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 })

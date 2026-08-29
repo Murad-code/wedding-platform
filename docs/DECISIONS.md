@@ -210,3 +210,47 @@ dashboard shell for an obviously anonymous visitor.
 **Consequences.** Authorisation is asserted in more than one place by design
 (docs/ARCHITECTURE.md §4). Tests assert the negative cases directly against the API, not
 through the UI, so a proxy misconfiguration cannot mask a missing server-side check.
+
+---
+
+## ADR-012 — End-to-end tests run against a production build
+
+**Status:** Accepted (2026-08-29)
+
+**Context.** Running Playwright against `next dev` produced intermittent timeouts on the
+heavier journeys. The cause was Turbopack compiling routes on first request: with two
+browser projects in parallel, the first hit to a route could exceed the assertion timeout.
+
+**Decision.** Playwright's `webServer` runs `pnpm build && pnpm start`. Set
+`PLAYWRIGHT_BASE_URL` to point at an already-running dev server when iterating locally.
+
+**Rationale.** It removes a class of flakiness whose cause is the dev server rather than
+the product, and it exercises the artefact that actually ships — which is how the
+production-only `Cache-Control: no-store` behaviour on dynamic pages was confirmed.
+
+**Consequences.** A full E2E run pays a one-off build cost. Worth it: retries that mask
+timing flakiness also mask real regressions.
+
+---
+
+## ADR-013 — Per-worker test accounts
+
+**Status:** Accepted (2026-08-29)
+
+**Context.** Parallel tests signing in as the same organiser failed intermittently: they
+were redirected back to the login page mid-test. Reproduced deliberately —
+`--repeat-each=3` failed 2 of 3 in parallel and passed 3 of 3 with `--workers=1`.
+
+**Cause.** Concurrent logins as one user race on that user's session list in Payload, and
+one login can invalidate another's session.
+
+**Decision.** Each Playwright worker gets its own `admin`, `organiser`, and `viewer`
+account, keyed by `parallelIndex`. Test data names use a random suffix rather than
+`Date.now()`, which collided when parallel tests started in the same millisecond.
+
+**Rationale.** Removes the contention instead of hiding it behind retries. Retries would
+have made this look fixed while leaving the underlying race in place.
+
+**Note for production.** The same race means one organiser signing in on two devices at
+the same instant could drop a session. Low impact — each organiser has their own account
+and simply signs in again — but recorded here rather than forgotten.

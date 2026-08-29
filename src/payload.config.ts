@@ -7,7 +7,10 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
 import { AuditEvents } from './collections/AuditEvents'
+import { Guests } from './collections/Guests'
+import { InvitationParties } from './collections/InvitationParties'
 import { Media } from './collections/Media'
+import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { WeddingSettings } from './globals/WeddingSettings'
 
@@ -23,7 +26,7 @@ export default buildConfig({
       titleSuffix: '— Wedding Platform',
     },
   },
-  collections: [Users, Media, AuditEvents],
+  collections: [Users, InvitationParties, Guests, Tags, Media, AuditEvents],
   globals: [WeddingSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
