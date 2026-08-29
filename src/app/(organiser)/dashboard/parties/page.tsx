@@ -15,13 +15,24 @@ const STATUS_LABEL: Record<string, string> = {
   complete: 'Answered',
 }
 
-export default async function PartiesPage() {
+const PARTIES_PER_PAGE = 50
+
+export default async function PartiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
   await requireOrganiser()
+
+  const { page: pageParam } = await searchParams
+  const requested = Number(pageParam)
+  const page = Number.isInteger(requested) && requested > 0 ? requested : 1
 
   const payload = await getPayload({ config })
   const parties = await payload.find({
     collection: 'invitation-parties',
-    limit: 200,
+    limit: PARTIES_PER_PAGE,
+    page,
     sort: 'displayName',
     depth: 0,
     overrideAccess: true,
@@ -71,6 +82,37 @@ export default async function PartiesPage() {
             ))}
           </ul>
         )}
+
+        {(parties.totalPages ?? 1) > 1 ? (
+          <nav
+            aria-label="Invitation party pages"
+            className="mt-4 flex items-center justify-between text-sm"
+          >
+            {page > 1 ? (
+              <Link
+                href={`/dashboard/parties?page=${page - 1}`}
+                className="rounded-md border border-organiser-border px-3 py-1.5 font-medium hover:bg-organiser-surface"
+              >
+                Previous
+              </Link>
+            ) : (
+              <span className="text-organiser-muted opacity-50">Previous</span>
+            )}
+            <span className="text-organiser-muted">
+              Page {parties.page ?? 1} of {parties.totalPages}
+            </span>
+            {page < (parties.totalPages ?? 1) ? (
+              <Link
+                href={`/dashboard/parties?page=${page + 1}`}
+                className="rounded-md border border-organiser-border px-3 py-1.5 font-medium hover:bg-organiser-surface"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="text-organiser-muted opacity-50">Next</span>
+            )}
+          </nav>
+        ) : null}
       </section>
     </div>
   )

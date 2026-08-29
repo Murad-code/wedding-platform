@@ -31,7 +31,7 @@ export default async function DashboardPage() {
         </div>
         <nav className="flex gap-2">
           <Link
-            href="/dashboard/parties"
+            href="/dashboard/guests"
             className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
           >
             Guest list

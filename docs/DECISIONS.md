@@ -254,3 +254,44 @@ have made this look fixed while leaving the underlying race in place.
 **Note for production.** The same race means one organiser signing in on two devices at
 the same instant could drop a session. Low impact — each organiser has their own account
 and simply signs in again — but recorded here rather than forgotten.
+
+---
+
+## ADR-014 — CSV parsing is hand-written, not a dependency
+
+**Status:** Accepted (2026-08-29)
+
+**Context.** Guest lists arrive as spreadsheets. Real files carry a UTF-8 BOM from Excel,
+CRLF endings, quoted fields containing commas ("Kamali, Murad"), doubled quotes, and
+trailing blank rows.
+
+**Decision.** `src/domain/guests/csv.ts` implements parsing and serialising directly,
+covered by 34 unit tests.
+
+**Rationale.** The requirement is narrow — one known column set, one file at a time — and
+the parser is about 80 lines. A dependency would add supply-chain surface for a wedding
+platform that handles personal data, and would still need the same wrapper for our
+column mapping, per-row error reporting, and duplicate detection. Revisit if we ever need
+streaming or multi-gigabyte files, which a wedding will not produce.
+
+**Notable behaviour.** Export prefixes values starting `=`, `+`, `-`, or `@` with a
+quote. Without it, opening the file runs the cell as a formula — corrupting the data and
+providing a well-known CSV injection vector.
+
+---
+
+## ADR-015 — Import previews before it writes
+
+**Status:** Accepted (2026-08-29)
+
+**Context.** An import that silently creates two hundred wrong records is far worse than
+one that asks first, and the organiser cannot easily undo it.
+
+**Decision.** Two steps. The first parses, validates, and returns a preview plus per-row
+errors, writing nothing. The second re-parses the same CSV server-side — never trusting a
+client-supplied row list — and applies it.
+
+**Consequences.** Parties are matched by name and created on demand, since spreadsheets
+name households rather than referencing ids. Guests already present in a party are
+skipped rather than duplicated, so re-importing a corrected file is safe — which is what
+people actually do.

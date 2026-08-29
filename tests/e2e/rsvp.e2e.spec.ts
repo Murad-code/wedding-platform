@@ -42,9 +42,10 @@ async function createPartyWithInvitation(page: Page, accounts: WorkerAccounts, p
   await page.getByLabel('Party name').fill(partyName)
   await page.getByRole('button', { name: 'Add party' }).click()
 
-  await page.getByRole('link', { name: partyName }).click()
+  // Creating a party lands on it, so the organiser can add people immediately.
   await expect(page.getByRole('heading', { name: partyName })).toBeVisible()
   const partyUrl = page.url()
+  expect(partyUrl).toMatch(/\/dashboard\/parties\/\d+$/)
 
   await addGuest(page, 'Murad', 'Kamali')
   await addGuest(page, 'Priya', 'Kamali')

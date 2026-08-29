@@ -71,3 +71,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - React Testing Library renders now clean up between tests; without it, queries matched
   earlier tests' output.
+
+### Added (Phase 2 — guest management)
+
+- Guest list with search, filters (RSVP, age, party, tag, dietary needs, plus-ones),
+  multi-key sorting, and pagination. All filter state lives in the URL, so a filtered
+  view survives a refresh and can be shared.
+- Guest detail and editing, covering contact, catering, accessibility, and internal notes.
+- Bulk actions: mark attending, declined, or awaiting, and delete.
+- CSV export honouring the current filter, and a two-step CSV import that previews and
+  reports per-row errors before writing anything.
+- Pagination on the invitation party list.
+
+### Changed
+
+- Creating an invitation party now opens it, so guests can be added immediately instead
+  of hunting for it in a paginated list.
+- Guest "name" sorting orders by surname then forename, so families read in a stable order.
+
+### Security
+
+- The CSV export is authorised like any other organiser endpoint and is never cached.
+- Exported values beginning `=`, `+`, `-`, or `@` are escaped, closing a CSV injection
+  vector and preventing spreadsheets from evaluating guest data as formulas.
+- Import re-parses the uploaded file server-side rather than trusting the previewed rows.

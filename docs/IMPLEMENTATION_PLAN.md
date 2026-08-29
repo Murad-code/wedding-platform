@@ -95,23 +95,35 @@ editor UI (`/dashboard/settings` is linked but not yet built).
 
 ---
 
-## Phase 2 — Guests
+## Phase 2 — Guests ✅
 
 - [x] `InvitationParties` collection (cascade-deletes its guests)
 - [x] `Guests` collection (party FK, indexed on party and RSVP status)
 - [x] `Tags` collection + many-to-many
 - [x] Create party / add guest via authorised server actions
-- [x] Party list and party detail screens with empty states
-- [ ] Full guest CRUD UI (edit, archive, plus-one configuration)
-- [ ] Search, filters, sorting, URL-reflected filter state
-- [ ] Bulk actions (tag, assign table, delete)
-- [ ] CSV export
-- [ ] CSV import with validation, preview, and per-row errors
-- [ ] Tests: import edge cases (duplicates, malformed rows, encoding)
-- [ ] Pagination on the party list (currently capped at 200)
+- [x] Creating a party lands on it, so guests can be added immediately
+- [x] Guest list with dense table, dietary alerts, and empty states
+- [x] Guest detail and edit (contact, catering, accessibility, plus-one, notes)
+- [x] Search across name and email, debounced
+- [x] Filters: RSVP, age group, party, tag, dietary needs, plus-ones
+- [x] Sorting (name, party, RSVP, recently added) — multi-key so families read in order
+- [x] URL-reflected filter state, so a filtered view survives a refresh and is shareable
+- [x] Pagination on the guest list and the party list
+- [x] Bulk actions: mark attending / declined / awaiting, delete
+- [x] CSV export, honouring the current filter, authorised and never cached
+- [x] CSV import: preview before writing, per-row errors, duplicate reporting
+- [x] Re-importing a corrected file skips existing guests rather than duplicating
+- [x] Tests: 54 unit tests for CSV parsing and filters; 15 E2E journeys
 
-**Status:** the data model and the write paths needed by the vertical slice are done and
-verified. The guest-management surface (search, filters, bulk, CSV) is not yet built.
+**Deferred (needs a later phase):**
+
+- Bulk "assign to table" — depends on Tables (Phase 6).
+- Tag creation and assignment from the guest list; the collection and filter exist, but
+  there is no UI to create or attach a tag yet.
+- The "unassigned seating" filter is defined but is a no-op until Phase 6.
+
+**Phase 2 verification (2026-08-29):** `pnpm verify` passes; 148 unit tests and 84
+Playwright tests across Chromium and WebKit, green on three consecutive full runs.
 
 ---
 
@@ -238,6 +250,8 @@ WebKit, green on three consecutive full runs.
 - [ ] Deterministic seed data — Sarah & Adam, 20–30 guests, mixed RSVP states, dietary
       needs, menu, tables, itinerary, contacts, photo groups
 - [ ] Seed script guarded against running in production
+- [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
+      indefinitely, which makes a dev database noisy over time (harmless, but untidy)
 - [ ] Keep this file, ADRs, and docs current as work lands
 
 ## Backlog

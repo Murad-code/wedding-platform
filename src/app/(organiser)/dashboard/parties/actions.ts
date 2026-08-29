@@ -2,6 +2,7 @@
 
 import config from '@payload-config'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import { z } from 'zod'
 
@@ -59,7 +60,11 @@ export async function createParty(
   })
 
   revalidatePath('/dashboard/parties')
-  return { ok: true }
+
+  // Go straight to the new party: the next thing an organiser wants is to add the
+  // people in it, and hunting for it in a paginated alphabetical list is busywork.
+  // `redirect` throws its own control-flow signal, so it must be the last statement.
+  redirect(`/dashboard/parties/${party.id}`)
 }
 
 export async function addGuest(_previous: ActionState, formData: FormData): Promise<ActionState> {
