@@ -188,3 +188,25 @@ relationship. Neither the seating plan nor the queue is stored as one JSON docum
 
 **Rationale.** Enables "unassigned guests", occupancy counts, and over-capacity checks as
 database queries, and prevents lost updates when two organisers edit concurrently.
+
+---
+
+## ADR-011 — Route protection split between `proxy.ts` and server guards
+
+**Status:** Accepted (2026-08-29)
+
+**Context.** Next.js 16 deprecated `middleware.ts` in favour of `proxy.ts`, and documents
+that proxy code may be deployed to a CDN edge and "should not attempt relying on shared
+modules or globals". That rules out verifying a Payload session there.
+
+**Decision.** `src/proxy.ts` performs only a coarse check — is an auth cookie present? —
+and redirects to `/login` if not. All real authorisation happens in `requireOrganiser()`
+(and its role variants) and in Payload collection `access` functions.
+
+**Rationale.** A cookie's presence proves nothing; it can be forged. Treating proxy as the
+security boundary would be a classic mistake. Its job here is purely to avoid rendering a
+dashboard shell for an obviously anonymous visitor.
+
+**Consequences.** Authorisation is asserted in more than one place by design
+(docs/ARCHITECTURE.md §4). Tests assert the negative cases directly against the API, not
+through the UI, so a proxy misconfiguration cannot mask a missing server-side check.

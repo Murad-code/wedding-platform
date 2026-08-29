@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -87,8 +89,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'wedding-settings': WeddingSetting;
+  };
+  globalsSelect: {
+    'wedding-settings': WeddingSettingsSelect<false> | WeddingSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -170,6 +176,44 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Append-only activity log.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events".
+ */
+export interface AuditEvent {
+  id: number;
+  /**
+   * e.g. rsvp.submitted, guest.deleted, invitation.rotated
+   */
+  action: string;
+  actorType: 'user' | 'guest' | 'system';
+  /**
+   * Set when an organiser performed the action.
+   */
+  actorUser?: (number | null) | User;
+  entityType?: string | null;
+  entityId?: string | null;
+  /**
+   * Non-identifying context only. Never tokens or guest PII.
+   */
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Salted hash. Never a raw IP address.
+   */
+  ipHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -200,6 +244,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'audit-events';
+        value: number | AuditEvent;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -287,6 +335,21 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-events_select".
+ */
+export interface AuditEventsSelect<T extends boolean = true> {
+  action?: T;
+  actorType?: T;
+  actorUser?: T;
+  entityType?: T;
+  entityId?: T;
+  metadata?: T;
+  ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -324,6 +387,133 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * The wedding this deployment is for. Guests see most of this.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wedding-settings".
+ */
+export interface WeddingSetting {
+  id: number;
+  /**
+   * First name shown on the website.
+   */
+  partnerOneName: string;
+  partnerTwoName: string;
+  /**
+   * Entered in the wedding timezone below.
+   */
+  weddingDate: string;
+  /**
+   * IANA timezone, e.g. Europe/London. Guests abroad see the local ceremony time, not their own.
+   */
+  timezone: string;
+  /**
+   * After this, guests can no longer change their RSVP.
+   */
+  rsvpDeadline?: string | null;
+  dressCode?: string | null;
+  /**
+   * The first thing guests read on the website.
+   */
+  welcomeMessage?: string | null;
+  heroImage?: (number | null) | Media;
+  ceremony?: {
+    venueName?: string | null;
+    address?: string | null;
+    /**
+     * Link to Google Maps or similar.
+     */
+    mapUrl?: string | null;
+    startTime?: string | null;
+    notes?: string | null;
+  };
+  reception?: {
+    venueName?: string | null;
+    address?: string | null;
+    /**
+     * Link to Google Maps or similar.
+     */
+    mapUrl?: string | null;
+    startTime?: string | null;
+    notes?: string | null;
+  };
+  travelInformation?: string | null;
+  parkingInformation?: string | null;
+  accommodationInformation?: string | null;
+  faqs?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Turning a feature off hides it from guests and from the dashboard.
+   */
+  enabledFeatures?:
+    | (
+        | 'rsvp'
+        | 'menu'
+        | 'seating'
+        | 'itinerary'
+        | 'photoQueue'
+        | 'accommodation'
+        | 'travel'
+        | 'faqs'
+        | 'contacts'
+        | 'smsNotifications'
+      )[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wedding-settings_select".
+ */
+export interface WeddingSettingsSelect<T extends boolean = true> {
+  partnerOneName?: T;
+  partnerTwoName?: T;
+  weddingDate?: T;
+  timezone?: T;
+  rsvpDeadline?: T;
+  dressCode?: T;
+  welcomeMessage?: T;
+  heroImage?: T;
+  ceremony?:
+    | T
+    | {
+        venueName?: T;
+        address?: T;
+        mapUrl?: T;
+        startTime?: T;
+        notes?: T;
+      };
+  reception?:
+    | T
+    | {
+        venueName?: T;
+        address?: T;
+        mapUrl?: T;
+        startTime?: T;
+        notes?: T;
+      };
+  travelInformation?: T;
+  parkingInformation?: T;
+  accommodationInformation?: T;
+  faqs?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  enabledFeatures?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -6,8 +6,10 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
+import { AuditEvents } from './collections/AuditEvents'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
+import { WeddingSettings } from './globals/WeddingSettings'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,8 +23,8 @@ export default buildConfig({
       titleSuffix: '— Wedding Platform',
     },
   },
-  collections: [Users, Media],
-  globals: [],
+  collections: [Users, Media, AuditEvents],
+  globals: [WeddingSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

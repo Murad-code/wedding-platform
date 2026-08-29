@@ -26,6 +26,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
 - [x] `.claude/` skills, rules, agents
 
 ### 0.2 Scaffold
+
 - [x] `package.json`, pnpm, Node/pnpm version pinning
 - [x] Next.js 16 App Router + TypeScript strict (`noUncheckedIndexedAccess` on)
 - [x] Payload 3.88 wired into Next (`(payload)` route group, `payload.config.ts`)
@@ -33,26 +34,28 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
 - [x] `.env.example`; `.env` confirmed git-ignored
 - [x] Tailwind 4 + design tokens for the two visual systems
 - [~] shadcn/ui primitives + Lucide — deps installed (`lucide-react`, `clsx`, `cva`,
-      `tailwind-merge`); components added in Phase 1 when first needed
-- [~] Route groups — `(guest)` and `(payload)` exist; `(organiser)` lands in Phase 1
+  `tailwind-merge`); components added in Phase 1 when first needed
+- [x] Route groups — `(guest)`, `(organiser)`, `(payload)`
 - [x] `src/domain/` boundary enforced by ESLint `no-restricted-imports`
 
 ### 0.3 Developer environment
+
 - [x] `docker-compose.yml` for Postgres (dev, port 5433 to avoid collisions)
 - [~] Migration commands — `pnpm payload migrate` wired; dev uses `push`. First real
-      migration is generated in Phase 1 with the first schema change
+  migration is generated in Phase 1 with the first schema change
 - [x] `/api/health` endpoint (app + database readiness)
 - [~] README quickstart — verified against a local Postgres; the Docker path is
-      unverified on this machine because the Docker daemon needs an admin password
+  unverified on this machine because the Docker daemon needs an admin password
 
 ### 0.4 Quality gates
+
 - [x] ESLint 9 + eslint-config-next 16 flat config (+ domain boundary rule)
 - [x] Prettier
 - [x] Vitest 4 + React Testing Library
 - [x] Playwright 1.62 (Chromium + WebKit; guest experience is iPhone-first)
 - [x] `pnpm verify` composite script — **passing**
 - [~] GitHub Actions CI written (lint, typecheck, test, build, E2E, secret scan);
-      not yet executed — the repository has no remote
+  not yet executed — the repository has no remote
 - [x] Secret scanning step (gitleaks) in CI
 
 **Phase 0 verification (2026-08-29):** `pnpm verify` passes end to end; 6/6 Playwright
@@ -63,20 +66,32 @@ its schema in PostgreSQL; guest page renders with the guest theme.
 
 ## Phase 1 — Wedding & organiser foundation
 
-- [ ] `Users` collection with roles `admin | organiser | viewer`
-- [ ] Access-control helpers (`isAdmin`, `isOrganiser`, `isAnyone`) + unit tests
-- [ ] Restrict Payload Admin to `admin`
-- [ ] `/login` + session handling
-- [ ] `requireOrganiser()` guard for layouts and route handlers
-- [ ] Middleware protecting `/dashboard/*`
-- [ ] Test: anonymous request to organiser API is rejected
-- [ ] Test: `viewer` cannot mutate
-- [ ] `WeddingSettings` global
-- [ ] `getWeddingSettings()` domain accessor (**only** read path)
-- [ ] Feature flag helper + tests
-- [ ] Dashboard shell: nav, layout, auth state
-- [ ] First-run setup checklist / empty state
-- [ ] `AuditEvents` collection + `recordAuditEvent()`
+- [x] `Users` collection with roles `admin | organiser | viewer`
+- [x] Access-control helpers (`canRead`, `canMutate`, `isAdmin`, `canManageTeam`) + tests
+- [x] Role field is admin-only to update (blocks self-promotion, T6)
+- [x] Restrict Payload Admin to `admin`
+- [x] `/login` + session handling (generic error, no account enumeration)
+- [x] `sanitiseRedirect()` prevents open redirect via `?next=` + tests
+- [x] `requireOrganiser()` / `requireMutator()` / `requireAdmin()` guards
+- [x] `proxy.ts` protecting `/dashboard/*` (Next 16 renamed `middleware.ts` → `proxy.ts`)
+- [x] Test: anonymous request to organiser API is rejected (403)
+- [x] Test: `viewer` cannot mutate (403)
+- [x] `WeddingSettings` global (couple, date, timezone, venues, deadline, content, features)
+- [x] `getWeddingSettings()` domain accessor — the only read path
+- [x] Feature flag helper + tests
+- [x] Dashboard shell: header, stat cards, auth state
+- [x] First-run setup checklist / empty state
+- [x] `AuditEvents` collection (append-only, writes denied to everyone) + `recordAuditEvent()`
+- [x] Audit metadata sanitiser strips tokens and PII + tests
+- [x] `scripts/create-admin.ts` bootstrap (credentials via env, never logged)
+
+**Phase 1 verification (2026-08-29):** `pnpm verify` passes; 46 unit tests and 32
+Playwright tests pass on Chromium and WebKit. Verified by hand against a live database:
+anonymous `/dashboard` → 307 to `/login`; wrong password → 401; correct password sets
+`payload-token` and renders the dashboard; `organiser` role is refused Payload Admin.
+
+**Deferred to Phase 2+:** dashboard navigation beyond the overview, and the settings
+editor UI (`/dashboard/settings` is linked but not yet built).
 
 ---
 
