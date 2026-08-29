@@ -100,9 +100,11 @@ describe('daysUntilWedding', () => {
     expect(daysUntilWedding(toWeddingSettingsView({}))).toBeNull()
   })
 
-  it('counts whole calendar days, not 24-hour blocks', () => {
-    // Late the night before is still "1 day away", not 0.
-    expect(daysUntilWedding(settings, new Date('2027-06-11T23:30:00Z'))).toBe(1)
+  it('counts whole calendar days in the wedding timezone, not 24-hour blocks', () => {
+    // The default timezone is Europe/London, which is UTC+1 in June: 22:00Z is the
+    // evening of the 11th locally, while 23:30Z is already the small hours of the 12th.
+    expect(daysUntilWedding(settings, new Date('2027-06-11T22:00:00Z'))).toBe(1)
+    expect(daysUntilWedding(settings, new Date('2027-06-11T23:30:00Z'))).toBe(0)
     expect(daysUntilWedding(settings, new Date('2027-06-12T01:00:00Z'))).toBe(0)
   })
 

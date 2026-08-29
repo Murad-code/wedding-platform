@@ -71,6 +71,8 @@ export interface Config {
     'invitation-parties': InvitationParty;
     guests: Guest;
     tags: Tag;
+    'itinerary-items': ItineraryItem;
+    'wedding-contacts': WeddingContact;
     media: Media;
     'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
@@ -84,6 +86,8 @@ export interface Config {
     'invitation-parties': InvitationPartiesSelect<false> | InvitationPartiesSelect<true>;
     guests: GuestsSelect<false> | GuestsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    'itinerary-items': ItineraryItemsSelect<false> | ItineraryItemsSelect<true>;
+    'wedding-contacts': WeddingContactsSelect<false> | WeddingContactsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -253,6 +257,55 @@ export interface Tag {
   createdAt: string;
 }
 /**
+ * The order of the day.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "itinerary-items".
+ */
+export interface ItineraryItem {
+  id: number;
+  title: string;
+  /**
+   * Lower numbers appear first.
+   */
+  order: number;
+  startTime?: string | null;
+  endTime?: string | null;
+  location?: string | null;
+  description?: string | null;
+  /**
+   * Internal items are for your own planning and are never shown to guests.
+   */
+  visibility: 'public' | 'guests' | 'internal';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wedding-contacts".
+ */
+export interface WeddingContact {
+  id: number;
+  name: string;
+  /**
+   * e.g. Best Man, Maid of Honour, Wedding Coordinator.
+   */
+  role?: string | null;
+  order: number;
+  phone?: string | null;
+  /**
+   * Include the country code.
+   */
+  whatsapp?: string | null;
+  email?: string | null;
+  /**
+   * Off by default — turn on only for people happy to be contacted.
+   */
+  visibleToGuests?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -351,6 +404,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tags';
         value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'itinerary-items';
+        value: number | ItineraryItem;
+      } | null)
+    | ({
+        relationTo: 'wedding-contacts';
+        value: number | WeddingContact;
       } | null)
     | ({
         relationTo: 'media';
@@ -473,6 +534,36 @@ export interface GuestsSelect<T extends boolean = true> {
  */
 export interface TagsSelect<T extends boolean = true> {
   name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "itinerary-items_select".
+ */
+export interface ItineraryItemsSelect<T extends boolean = true> {
+  title?: T;
+  order?: T;
+  startTime?: T;
+  endTime?: T;
+  location?: T;
+  description?: T;
+  visibility?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wedding-contacts_select".
+ */
+export interface WeddingContactsSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  order?: T;
+  phone?: T;
+  whatsapp?: T;
+  email?: T;
+  visibleToGuests?: T;
   updatedAt?: T;
   createdAt?: T;
 }

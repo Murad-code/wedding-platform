@@ -72,10 +72,10 @@ export function EditGuestForm({ guest, className }: { guest: EditableGuest; clas
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="isPlusOne" defaultChecked={guest.isPlusOne} />
-          This is a plus one
-        </label>
+        <div className="flex items-center gap-2 text-sm">
+          <input id="isPlusOne" type="checkbox" name="isPlusOne" defaultChecked={guest.isPlusOne} />
+          <label htmlFor="isPlusOne">This is a plus one</label>
+        </div>
       </fieldset>
 
       <fieldset className="space-y-4">

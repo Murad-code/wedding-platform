@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { rsvpSubmissionSchema } from '@/domain/rsvp/schema'
 import { isRsvpOpen } from '@/domain/wedding/settings'
 import { findPartyByToken } from '@/lib/invitations'
-import { clientIp, rsvpSubmissionLimiter } from '@/lib/rate-limit'
+import { clientIp, rsvpAddressLimiter, rsvpTokenLimiter } from '@/lib/rate-limit'
 import { submitRsvp } from '@/lib/rsvp'
 import { getWeddingSettings } from '@/lib/wedding'
 
@@ -20,11 +20,9 @@ export async function POST(request: Request) {
   const requestHeaders = await headers()
   const ip = clientIp(requestHeaders)
 
-  if (!rsvpSubmissionLimiter.check(ip).allowed) {
-    return Response.json(
-      { error: 'Too many attempts. Please wait a moment and try again.' },
-      { status: 429, headers: { 'Cache-Control': 'no-store' } },
-    )
+  // Generous ceiling: a coach party on the venue wifi may all reply within minutes.
+  if (!rsvpAddressLimiter.check(ip).allowed) {
+    return tooManyAttempts()
   }
 
   let body: unknown
@@ -39,6 +37,11 @@ export async function POST(request: Request) {
   // The token comes from the request body rather than a party id: the party is always
   // derived from the token, never supplied by the client.
   const { token, ...rest } = body as Record<string, unknown>
+
+  // Throttled per token, so one hammered invitation cannot affect another household.
+  if (typeof token === 'string' && !rsvpTokenLimiter.check(token).allowed) {
+    return tooManyAttempts()
+  }
 
   const party = await findPartyByToken(token)
   if (!party) {
@@ -76,6 +79,13 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+}
+
+function tooManyAttempts() {
+  return Response.json(
+    { error: 'Too many attempts. Please wait a moment and try again.' },
+    { status: 429, headers: { 'Cache-Control': 'no-store' } },
+  )
 }
 
 function badRequest(message: string) {

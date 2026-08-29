@@ -295,3 +295,33 @@ client-supplied row list — and applies it.
 name households rather than referencing ids. Guests already present in a party are
 skipped rather than duplicated, so re-importing a corrected file is safe — which is what
 people actually do.
+
+---
+
+## ADR-016 — Rate limiting is shaped around shared guest IPs
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** The invitation page originally limited lookups to 30 per minute per IP. The
+E2E suite tripped it, which surfaced the real problem: at a wedding, most of the guest
+list is behind one NAT — the venue wifi, or a mobile carrier. A per-IP limit on ordinary
+lookups would lock out a whole room the moment the link was shared.
+
+**Decision.**
+
+- Successful invitation lookups are not rate limited. A 256-bit token already proves the
+  holder was given the link.
+- **Failed** lookups are limited per IP. Enumeration produces failures; honest guests do
+  not.
+- RSVP submissions are limited per **token**, so one hammered invitation cannot affect
+  another household, with a deliberately generous per-IP ceiling behind it.
+
+**Rationale.** The thing worth throttling is guessing, not reading. Keying the primary
+limit on the token rather than the address also matches the actual unit of abuse.
+
+**Consequences.** A rate-limited lookup returns the same "not found" response as an
+unknown token, so throttling does not become an oracle. Login remains per-IP and
+per-account, because passwords are low-entropy and that threat genuinely is address-shaped.
+
+**Found by:** the test suite exceeding the platform's own limit — a useful reminder that
+load-shaped bugs surface under parallel tests before they surface in production.

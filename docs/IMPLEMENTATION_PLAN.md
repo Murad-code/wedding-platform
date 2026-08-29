@@ -170,18 +170,34 @@ WebKit, green on three consecutive full runs.
 
 ---
 
-## Phase 4 — Wedding website
+## Phase 4 — Wedding website ✅
 
-- [ ] Guest layout, typography, and theme tokens
-- [ ] Landing + countdown (timezone-correct)
-- [ ] Ceremony / reception / venue / maps / travel / parking / accommodation
-- [ ] Itinerary (guest view)
-- [ ] FAQs
-- [ ] Contacts (respecting visibility)
-- [ ] Section visibility driven by settings
-- [ ] Organiser website content editor
-- [ ] Responsive + accessibility pass (WCAG 2.2 AA)
-- [ ] Lighthouse check on mobile
+- [x] Guest layout, typography, and theme tokens
+- [x] Landing page with a timezone-correct countdown
+- [x] Ceremony / reception / venue / maps / travel / parking / accommodation
+- [x] Itinerary with three visibility levels (public / invited guests / internal)
+- [x] Itinerary on the personal invitation, so guests-only items have somewhere to appear
+- [x] FAQs
+- [x] Contacts respecting visibility, with tel / WhatsApp / email links
+- [x] Section visibility driven by the feature flags
+- [x] Organiser editors: wedding settings, itinerary, contacts
+- [x] `ItineraryItems` and `WeddingContacts` collections
+- [x] Responsive and accessibility pass — explicit labels, 44px touch targets, semantic
+      lists and description lists, status conveyed by text as well as colour
+- [ ] Lighthouse check on mobile — not run; needs a production deploy to be meaningful
+
+**Fixed during this phase:**
+
+- `/dashboard/settings` was linked from the dashboard and the setup checklist but did not
+  exist. It now does.
+- `daysUntilWedding` counted in UTC, which is off by one wherever the wedding is not near
+  UTC — a 17:00 Los Angeles ceremony would have read as "tomorrow" all morning.
+- Rate limiting was per-IP on every invitation lookup, which would have locked out a
+  venue full of guests sharing one wifi connection (ADR-016).
+
+**Phase 4 verification (2026-08-30):** `pnpm verify` passes; 195 unit tests and 118
+Playwright tests across Chromium and WebKit, green on three consecutive full runs.
+Verified visually at 430px: landing, timeline, and contacts.
 
 ---
 

@@ -69,16 +69,26 @@ The brief requires no publicly enumerable guest directory, and we go further:
 
 ## 4. Rate limiting
 
-| Endpoint             | Limit                                   |
-| -------------------- | --------------------------------------- |
-| `GET /invite/:token` | per IP, sliding window; generic failure |
-| `POST /api/rsvp`     | per token and per IP                    |
-| Organiser login      | per IP and per account, with backoff    |
-| CSV import/export    | per authenticated user                  |
+**Guests at a wedding share an IP.** The venue's wifi, or a mobile carrier's NAT, puts
+most of the guest list behind one address. A naive per-IP limit on invitation lookups
+would therefore lock out an entire room the moment the link was shared — a self-inflicted
+outage during the event. The limits below are shaped around that.
+
+| Surface                                      | Key                    | Limit        | Rationale                                                                                                  |
+| -------------------------------------------- | ---------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `GET /invite/:token` — **successful** lookup | not limited            | —            | A 256-bit token already proves the holder was given the link. Re-reading your own invitation is not abuse. |
+| `GET /invite/:token` — **failed** lookup     | per IP                 | 20 / min     | Enumeration produces a stream of _failures_; honest guests essentially never generate them.                |
+| `POST /api/rsvp`                             | per token              | 20 / min     | One hammered invitation cannot affect another household.                                                   |
+| `POST /api/rsvp`                             | per IP                 | 300 / min    | Ceiling against scripted flooding, sized so a coach party replying at once is unaffected.                  |
+| Organiser login                              | per IP and per account | with backoff | Credentials are low-entropy; this one genuinely is per-IP.                                                 |
+| CSV import/export                            | per authenticated user | —            |                                                                                                            |
+
+A rate-limited invitation lookup returns exactly the same "not found" page as an unknown
+token, so throttling does not become an oracle either.
 
 MVP uses an in-process limiter — correct here because one wedding runs one container, and
 consistent with ADR-006. Moving to a shared store would be required only if replicas are
-introduced; the limiter is behind an interface for that reason.
+introduced; the limiter sits behind an interface for that reason.
 
 ## 5. Authentication & authorisation
 

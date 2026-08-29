@@ -29,19 +29,21 @@ export default async function DashboardPage() {
             Signed in as {session.name || session.email}
           </p>
         </div>
-        <nav className="flex gap-2">
-          <Link
-            href="/dashboard/guests"
-            className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
-          >
-            Guest list
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
-          >
-            Wedding settings
-          </Link>
+        <nav aria-label="Dashboard sections" className="flex flex-wrap gap-2">
+          {[
+            { href: '/dashboard/guests', label: 'Guest list' },
+            { href: '/dashboard/itinerary', label: 'Itinerary' },
+            { href: '/dashboard/contacts', label: 'Contacts' },
+            { href: '/dashboard/settings', label: 'Wedding settings' },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-md border border-organiser-border px-3 py-1.5 text-sm font-medium hover:bg-organiser-surface"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </header>
 

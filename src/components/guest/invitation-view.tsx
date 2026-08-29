@@ -1,7 +1,9 @@
+import type { ItineraryEntry } from '@/domain/itinerary/item'
 import type { WeddingSettingsView } from '@/domain/wedding/settings'
 import type { ResolvedParty } from '@/lib/invitations'
 
 import { RsvpForm } from './rsvp-form'
+import { Timeline } from './timeline'
 
 function formatWeddingDate(iso: string | null, timezone: string): string | null {
   if (!iso) return null
@@ -21,11 +23,13 @@ export function InvitationView({
   settings,
   rsvpOpen,
   token,
+  itinerary = [],
 }: {
   party: ResolvedParty
   settings: WeddingSettingsView
   rsvpOpen: boolean
   token: string
+  itinerary?: ItineraryEntry[]
 }) {
   const date = formatWeddingDate(settings.weddingDate, settings.timezone)
   const hasResponded = party.respondedAt !== null
@@ -76,6 +80,15 @@ export function InvitationView({
         <p className="mt-10 text-center text-lg leading-relaxed whitespace-pre-line">
           {settings.welcomeMessage}
         </p>
+      ) : null}
+
+      {itinerary.length > 0 ? (
+        <section className="mt-12" aria-labelledby="timeline-heading">
+          <h2 id="timeline-heading" className="font-guest-display text-2xl">
+            The order of the day
+          </h2>
+          <Timeline entries={itinerary} timezone={settings.timezone} className="mt-6" />
+        </section>
       ) : null}
 
       <section className="mt-12" aria-labelledby="rsvp-heading">

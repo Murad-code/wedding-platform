@@ -101,3 +101,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The documented quickstart now runs end to end on `postgres:17-alpine` via `pnpm db:up`:
   an empty database, Payload creating its schema, `pnpm create-admin`, and the full test
   suite green. Data survives a container restart, confirming the named volume.
+
+### Added (Phase 4 — wedding website)
+
+- Public guest site: landing page with a timezone-correct countdown, ceremony and
+  reception details, venue and travel information, FAQs, contacts, and an RSVP page that
+  explains the personal link without offering a guest lookup.
+- `ItineraryItems` with three visibility levels — public, invited guests, internal —
+  filtered server-side so supplier timings never reach a browser. Guests-only items
+  appear on the personal invitation.
+- `WeddingContacts` with tel, WhatsApp, and email links; hidden by default so supplier
+  numbers can live alongside guest-facing ones.
+- Organiser editors for wedding settings, the itinerary, and contacts.
+
+### Fixed
+
+- `/dashboard/settings` was linked from the dashboard but did not exist.
+- `daysUntilWedding` counted calendar days in UTC, so any wedding far from UTC showed the
+  wrong number — a 17:00 Los Angeles ceremony read as "tomorrow" all morning.
+- Phone links now drop the bracketed trunk prefix in numbers like `+44 (0)20 …`, which
+  otherwise produced an undialable `tel:` link.
+- Checkboxes use explicit `label for` rather than wrapping the input, avoiding the
+  double-toggle some engines exhibit with nested inputs.
+
+### Security
+
+- Rate limiting reshaped around the fact that wedding guests share an IP: successful
+  invitation lookups are unthrottled, failed ones are throttled per IP, and RSVP
+  submissions are throttled per token (ADR-016). The previous per-IP limit would have
+  locked out a venue full of guests on one wifi connection.

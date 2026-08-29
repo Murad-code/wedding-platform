@@ -74,3 +74,30 @@ describe('createInMemoryRateLimiter', () => {
     expect(limiter.check('ip').retryAfterSeconds).toBe(3)
   })
 })
+
+describe('rate-limit shape for a wedding audience', () => {
+  it('lets a whole venue share one address without locking anyone out', () => {
+    // Guests are overwhelmingly behind one NAT — the venue wifi or a mobile carrier.
+    // A ceiling sized for that must not trip on ordinary use.
+    const limiter = createInMemoryRateLimiter({ limit: 300, windowMs: 60_000, now: () => 0 })
+
+    for (let guest = 0; guest < 150; guest++) {
+      expect(limiter.check('venue-nat').allowed).toBe(true)
+    }
+  })
+
+  it('still stops scripted flooding from one address', () => {
+    const limiter = createInMemoryRateLimiter({ limit: 300, windowMs: 60_000, now: () => 0 })
+    for (let i = 0; i < 300; i++) limiter.check('attacker')
+    expect(limiter.check('attacker').allowed).toBe(false)
+  })
+
+  it('throttles a hammered token without affecting another household', () => {
+    const limiter = createInMemoryRateLimiter({ limit: 20, windowMs: 60_000, now: () => 0 })
+
+    for (let i = 0; i < 20; i++) limiter.check('token-a')
+    expect(limiter.check('token-a').allowed).toBe(false)
+    // A different family's invitation is unaffected.
+    expect(limiter.check('token-b').allowed).toBe(true)
+  })
+})

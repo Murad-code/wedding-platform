@@ -1,3 +1,4 @@
+import { calendarDaysUntil } from './countdown'
 import { type FeatureFlags, resolveFeatures } from './features'
 
 /**
@@ -125,20 +126,15 @@ export function isRsvpOpen(settings: WeddingSettingsView, now: Date = new Date()
   return now.getTime() <= new Date(settings.rsvpDeadline).getTime()
 }
 
-/** Whole days until the wedding. Negative once it has passed. */
+/**
+ * Whole calendar days until the wedding, counted in the wedding's own timezone.
+ *
+ * Delegates to `calendarDaysUntil` rather than doing UTC arithmetic here: counting in UTC
+ * is off by one wherever the wedding is not near UTC (see docs and the countdown tests).
+ */
 export function daysUntilWedding(
   settings: WeddingSettingsView,
   now: Date = new Date(),
 ): number | null {
-  if (!settings.weddingDate) return null
-  const MS_PER_DAY = 86_400_000
-  const wedding = new Date(settings.weddingDate)
-  // Compare calendar days, so "tomorrow" does not read as 0 because of clock time.
-  const startOfWedding = Date.UTC(
-    wedding.getUTCFullYear(),
-    wedding.getUTCMonth(),
-    wedding.getUTCDate(),
-  )
-  const startOfToday = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  return Math.round((startOfWedding - startOfToday) / MS_PER_DAY)
+  return calendarDaysUntil(settings.weddingDate, settings.timezone, now)
 }
