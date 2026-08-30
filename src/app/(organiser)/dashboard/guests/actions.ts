@@ -12,7 +12,7 @@ import { recordAuditEvent } from '@/lib/audit'
 import { requireMutator } from '@/lib/auth/session'
 import { importGuests, type ImportOutcome } from '@/lib/guest-list'
 
-export type ActionState = { error?: string; ok?: boolean }
+export type ActionState = { error?: string; ok?: boolean; updated?: number }
 
 const optionalText = (max: number) =>
   z
@@ -90,7 +90,12 @@ export async function updateGuest(
 
 const bulkSchema = z.object({
   guestIds: z.array(z.coerce.number().int().positive()).min(1, 'Select at least one guest'),
-  action: z.enum(['delete', 'markAttending', 'markDeclined', 'markPending']),
+  action: z.enum(['delete', 'markAttending', 'markDeclined', 'markPending', 'assignTable']),
+  // Only meaningful for assignTable; an empty string returns guests to unassigned.
+  tableId: z
+    .union([z.coerce.number().int().positive(), z.literal('')])
+    .transform((value) => (value === '' ? null : value))
+    .optional(),
 })
 
 export async function bulkUpdateGuests(
@@ -102,16 +107,25 @@ export async function bulkUpdateGuests(
   const parsed = bulkSchema.safeParse({
     guestIds: formData.getAll('guestIds'),
     action: formData.get('action'),
+    tableId: formData.get('tableId') ?? '',
   })
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'That bulk action was not valid.' }
   }
 
-  const { guestIds, action } = parsed.data
+  const { guestIds, action, tableId } = parsed.data
   const payload = await getPayload({ config })
 
-  if (action === 'delete') {
+  if (action === 'assignTable') {
+    // Capacity is advisory, so a bulk seat is never refused for being a squeeze.
+    await payload.update({
+      collection: 'guests',
+      where: { id: { in: guestIds } },
+      overrideAccess: true,
+      data: { table: tableId ?? null },
+    })
+  } else if (action === 'delete') {
     await payload.delete({
       collection: 'guests',
       where: { id: { in: guestIds } },
@@ -139,8 +153,9 @@ export async function bulkUpdateGuests(
   })
 
   revalidatePath('/dashboard/guests')
+  revalidatePath('/dashboard/seating')
   revalidatePath('/dashboard')
-  return { ok: true }
+  return { ok: true, updated: guestIds.length }
 }
 
 export type ImportState = {

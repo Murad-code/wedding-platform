@@ -19,6 +19,10 @@ const test = base.extend<{ id: string }>({
     await page.request
       .delete(`/api/menu-courses?where[name][contains]=${id}`)
       .catch(() => undefined)
+    // Deleting the party cascades to the guests created for it.
+    await page.request
+      .delete(`/api/invitation-parties?where[displayName][contains]=${id}`)
+      .catch(() => undefined)
   },
 })
 

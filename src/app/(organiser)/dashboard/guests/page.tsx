@@ -8,6 +8,7 @@ import { GuestTable } from '@/components/organiser/guest-table'
 import { filtersToQuery, hasActiveFilters, parseGuestFilters } from '@/domain/guests/filters'
 import { requireOrganiser } from '@/lib/auth/session'
 import { findGuests } from '@/lib/guest-list'
+import { getTables } from '@/lib/seating'
 
 export const metadata: Metadata = { title: 'Guest list' }
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,7 @@ export default async function GuestsPage({
   const [page, payload] = await Promise.all([findGuests(filters), getPayload({ config })])
 
   // Party and tag options for the filter bar. Kept shallow — these are pickers, not data.
-  const [parties, tags] = await Promise.all([
+  const [parties, tags, tables] = await Promise.all([
     payload.find({
       collection: 'invitation-parties',
       limit: 500,
@@ -32,6 +33,7 @@ export default async function GuestsPage({
       overrideAccess: true,
     }),
     payload.find({ collection: 'tags', limit: 200, sort: 'name', depth: 0, overrideAccess: true }),
+    getTables(),
   ])
 
   const query = filtersToQuery(filters)
@@ -85,7 +87,13 @@ export default async function GuestsPage({
         className="mt-6"
       />
 
-      <GuestTable page={page} filters={filters} filtered={filtered} className="mt-6" />
+      <GuestTable
+        page={page}
+        filters={filters}
+        filtered={filtered}
+        tables={tables.map((table) => ({ id: table.id, name: table.name }))}
+        className="mt-6"
+      />
     </div>
   )
 }

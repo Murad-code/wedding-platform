@@ -164,9 +164,8 @@ export function guestFiltersToWhere(filters: GuestFilters): Record<string, unkno
 
   if (filters.special === 'plusOne') and.push({ isPlusOne: { equals: true } })
 
-  // Seating lands in Phase 6; until then "unassigned" would match every guest, which
-  // would be misleading rather than merely empty.
-  if (filters.special === 'unassigned') and.push({ id: { exists: true } })
+  // Guests with no table yet — the number the seating planner exists to get to zero.
+  if (filters.special === 'unassigned') and.push({ table: { exists: false } })
 
   return and.length > 0 ? { and } : {}
 }

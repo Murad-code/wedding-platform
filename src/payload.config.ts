@@ -14,6 +14,7 @@ import { ItineraryItems } from './collections/ItineraryItems'
 import { MenuCourses } from './collections/MenuCourses'
 import { MenuOptions } from './collections/MenuOptions'
 import { Media } from './collections/Media'
+import { Tables } from './collections/Tables'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { WeddingContacts } from './collections/WeddingContacts'
@@ -36,6 +37,7 @@ export default buildConfig({
     InvitationParties,
     Guests,
     Tags,
+    Tables,
     MenuCourses,
     MenuOptions,
     GuestMealSelections,

@@ -71,6 +71,7 @@ export interface Config {
     'invitation-parties': InvitationParty;
     guests: Guest;
     tags: Tag;
+    tables: Table;
     'menu-courses': MenuCourse;
     'menu-options': MenuOption;
     'guest-meal-selections': GuestMealSelection;
@@ -89,6 +90,7 @@ export interface Config {
     'invitation-parties': InvitationPartiesSelect<false> | InvitationPartiesSelect<true>;
     guests: GuestsSelect<false> | GuestsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    tables: TablesSelect<false> | TablesSelect<true>;
     'menu-courses': MenuCoursesSelect<false> | MenuCoursesSelect<true>;
     'menu-options': MenuOptionsSelect<false> | MenuOptionsSelect<true>;
     'guest-meal-selections': GuestMealSelectionsSelect<false> | GuestMealSelectionsSelect<true>;
@@ -243,12 +245,36 @@ export interface Guest {
    */
   allergies?: string | null;
   accessibilityNeeds?: string | null;
+  /**
+   * Empty means this guest still needs a seat.
+   */
+  table?: (number | null) | Table;
   tags?: (number | Tag)[] | null;
   /**
    * Never shown to guests.
    */
   internalNotes?: string | null;
   respondedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tables".
+ */
+export interface Table {
+  id: number;
+  /**
+   * e.g. “Top table”, “Table 4”.
+   */
+  name: string;
+  /**
+   * Advisory. You can seat more — we will warn, not refuse.
+   */
+  capacity: number;
+  shape: 'round' | 'rectangle' | 'head';
+  order: number;
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -465,6 +491,10 @@ export interface PayloadLockedDocument {
         value: number | Tag;
       } | null)
     | ({
+        relationTo: 'tables';
+        value: number | Table;
+      } | null)
+    | ({
         relationTo: 'menu-courses';
         value: number | MenuCourse;
       } | null)
@@ -593,6 +623,7 @@ export interface GuestsSelect<T extends boolean = true> {
   dietaryRequirements?: T;
   allergies?: T;
   accessibilityNeeds?: T;
+  table?: T;
   tags?: T;
   internalNotes?: T;
   respondedAt?: T;
@@ -605,6 +636,19 @@ export interface GuestsSelect<T extends boolean = true> {
  */
 export interface TagsSelect<T extends boolean = true> {
   name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tables_select".
+ */
+export interface TablesSelect<T extends boolean = true> {
+  name?: T;
+  capacity?: T;
+  shape?: T;
+  order?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

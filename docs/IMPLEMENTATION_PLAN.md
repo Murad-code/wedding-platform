@@ -231,15 +231,35 @@ offered the children's menu and a child is.
 
 ---
 
-## Phase 6 — Seating
+## Phase 6 — Seating ✅
 
-- [ ] `Tables` collection
-- [ ] Assignment via `Guest.table`
-- [ ] Planner UI: unassigned pane + table cards
-- [ ] dnd-kit drag and drop
-- [ ] **Keyboard-accessible assignment path** + live-region announcements
-- [ ] Occupancy and over-capacity warnings (warn, never block)
-- [ ] Tests: capacity, unassigned query, move semantics
+- [x] `Tables` collection (unique names, advisory capacity, shape)
+- [x] Assignment via `Guest.table`; deleting a table returns its guests to unassigned
+- [x] Planner: unassigned pane, table cards, occupancy, summary
+- [x] dnd-kit drag and drop with pointer and keyboard sensors
+- [x] **Keyboard-accessible assignment path** — a labelled select on every guest,
+      plus a live region announcing the outcome of every move however it was made
+- [x] Occupancy and over-capacity warnings that warn and never block
+- [x] "Not enough seats" warning listed first, since rearranging cannot fix it
+- [x] Bulk "seat selected guests at" from the guest list (deferred from Phase 2)
+- [x] The `unassigned` guest filter is now real (it was a documented no-op)
+- [x] Tests: capacity, unassigned query, move semantics, announcements
+
+**Fixed during this phase:**
+
+- The planner held its own client state, so deleting a table left its guests displayed at
+  a table that no longer existed until a manual reload. It now remounts when the table
+  set changes.
+- dnd-kit's generated `aria-describedby` differed between server and client, logging a
+  hydration mismatch on every draggable. Fixed with a stable `DndContext` id.
+- Seating writes happen in the background with no indication, so an organiser could close
+  the tab on an unsaved change. A "Saving…" indicator now shows while a write is in
+  flight.
+- Bulk actions gave no confirmation; they now report how many guests were updated.
+
+**Phase 6 verification (2026-08-30):** `pnpm verify` passes; 249 unit tests and 168
+Playwright tests across Chromium and WebKit, green on four consecutive runs at ~52s each,
+leaving the database exactly as they found it. Verified visually.
 
 ---
 

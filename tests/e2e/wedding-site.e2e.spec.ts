@@ -22,6 +22,10 @@ const test = base.extend<{ id: string }>({
       page.request
         .delete(`/api/wedding-contacts?where[name][contains]=${id}`)
         .catch(() => undefined),
+      // Deleting the party cascades to the guests created for it.
+      page.request
+        .delete(`/api/invitation-parties?where[displayName][contains]=${id}`)
+        .catch(() => undefined),
     ])
   },
 })

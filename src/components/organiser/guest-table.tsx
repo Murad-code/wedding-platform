@@ -27,11 +27,13 @@ export function GuestTable({
   page,
   filters,
   filtered,
+  tables = [],
   className,
 }: {
   page: GuestListPage
   filters: GuestFilters
   filtered: boolean
+  tables?: { id: number; name: string }[]
   className?: string
 }) {
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -105,6 +107,29 @@ export function GuestTable({
             <BulkButton name="action" value="markPending" disabled={pending}>
               Reset to awaiting
             </BulkButton>
+            {tables.length > 0 ? (
+              <span className="flex items-center gap-1.5">
+                <label htmlFor="bulk-table" className="sr-only">
+                  Seat selected guests at
+                </label>
+                <select
+                  id="bulk-table"
+                  name="tableId"
+                  defaultValue=""
+                  className="rounded-md border border-organiser-border bg-organiser-surface px-2 py-1.5 text-sm"
+                >
+                  <option value="">Unassigned</option>
+                  {tables.map((table) => (
+                    <option key={table.id} value={table.id}>
+                      {table.name}
+                    </option>
+                  ))}
+                </select>
+                <BulkButton name="action" value="assignTable" disabled={pending}>
+                  Seat
+                </BulkButton>
+              </span>
+            ) : null}
             <BulkButton name="action" value="delete" disabled={pending} destructive>
               Delete
             </BulkButton>
@@ -120,6 +145,12 @@ export function GuestTable({
           {state.error ? (
             <p role="alert" className="w-full text-sm text-status-declined">
               {state.error}
+            </p>
+          ) : null}
+
+          {state.updated ? (
+            <p role="status" className="w-full text-sm text-status-attending">
+              {state.updated} {state.updated === 1 ? 'guest' : 'guests'} updated.
             </p>
           ) : null}
         </form>

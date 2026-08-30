@@ -93,6 +93,13 @@ export const Guests: CollectionConfig = {
       maxLength: 500,
     },
     {
+      name: 'table',
+      type: 'relationship',
+      relationTo: 'tables',
+      index: true,
+      admin: { description: 'Empty means this guest still needs a seat.' },
+    },
+    {
       name: 'tags',
       type: 'relationship',
       relationTo: 'tags',

@@ -149,3 +149,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   been counted in the caterer's totals.
 - Declining after choosing a meal now clears the choice, so nothing is plated for someone
   who is not coming.
+
+### Added (Phase 6 — seating)
+
+- `Tables` with unique names and advisory capacity; deleting a table returns its guests
+  to the unassigned pane.
+- Seating planner with an unassigned pane, table cards, live occupancy, and warnings
+  ordered worst-first.
+- Drag and drop via dnd-kit, layered over a labelled select on every guest that is the
+  primary keyboard path, with a live region announcing every move (ADR-019).
+- Bulk "seat selected guests at" from the guest list.
+- A "Saving…" indicator while a seating change is being written.
+
+### Changed
+
+- The `unassigned` guest filter now filters on the real relationship; it was a documented
+  no-op until seating existed.
+- Bulk guest actions report how many guests were updated.
+
+### Fixed
+
+- Deleting a table left its guests displayed at it until a manual reload.
+- dnd-kit logged a hydration mismatch on every draggable; fixed with a stable context id.
+
+### Testing
+
+- E2E global setup clears accumulated login sessions. Payload stores sessions as an array
+  and rewrites it on every login; after hundreds of logins, concurrent sign-ins began
+  dropping each other's sessions and bouncing tests to the login page.

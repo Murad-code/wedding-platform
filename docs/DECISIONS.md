@@ -349,3 +349,40 @@ which is the only way to express "these are now the choices" including a course 
 has backed out of. Payload's foreign keys are `ON DELETE SET NULL`, so `Guests`,
 `MenuCourses`, and `MenuOptions` all delete dependent selections explicitly — otherwise a
 deleted guest's meal would still be counted in the caterer's totals.
+
+---
+
+## ADR-018 — Seating capacity warns, never blocks
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** An eight-seat table with nine guests could be treated as an error to reject.
+
+**Decision.** Every capacity rule produces a warning; none prevent the assignment.
+
+**Rationale.** An organiser adding a ninth chair knows their venue better than we do.
+Refusing the move would force them to lie about the capacity to get their real plan into
+the software, at which point the number stops meaning anything. Warnings are ordered
+worst-first, and "there are more guests than seats" comes before individual tables because
+no amount of rearranging fixes it.
+
+---
+
+## ADR-019 — Drag and drop is an addition to the keyboard path, not the other way round
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** `docs/UX.md` §3.3 requires seating to be operable without a mouse.
+
+**Decision.** Every guest row carries a labelled `<select>` naming its destination, which
+is the primary way to seat someone. dnd-kit is layered on top with both pointer and
+keyboard sensors, and a live region announces the outcome of every move — including the
+resulting occupancy, and whether the table is now over capacity.
+
+**Rationale.** Drag-only seating excludes keyboard and screen-reader users outright, and
+is awkward on a touchscreen besides. Building the accessible path first means it is the
+one that is actually exercised, rather than a fallback nobody tests. The E2E suite drives
+the select, so the accessible path is the tested path.
+
+**Consequence.** Both routes call one server action, so there is a single place where
+authorisation and validation happen.

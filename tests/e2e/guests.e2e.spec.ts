@@ -3,7 +3,28 @@ import { randomUUID } from 'node:crypto'
 import type { Page } from '@playwright/test'
 
 import type { TestAccount } from './support/accounts'
-import { expect, test } from './support/fixtures'
+import { expect, test as base } from './support/fixtures'
+
+/**
+ * Deleting a party cascades to its guests, so one cleanup call per test keeps the shared
+ * guest list from growing run after run. Runs even when a test fails partway.
+ */
+const test = base.extend<{ cleanup: void }>({
+  cleanup: [
+    async ({ page }, use) => {
+      await use()
+      for (const prefix of CLEANUP_PREFIXES.splice(0)) {
+        await page.request
+          .delete(`/api/invitation-parties?where[displayName][contains]=${prefix}`)
+          .catch(() => undefined)
+      }
+    },
+    { auto: true },
+  ],
+})
+
+/** Party-name prefixes this spec creates, collected so the fixture can remove them. */
+const CLEANUP_PREFIXES: string[] = []
 
 async function signIn(page: Page, account: Pick<TestAccount, 'email' | 'password'>) {
   await page.goto('/login')
@@ -21,7 +42,9 @@ async function signIn(page: Page, account: Pick<TestAccount, 'email' | 'password
  * data behind.
  */
 function scope() {
-  return `T${randomUUID().slice(0, 8)}`
+  const id = `T${randomUUID().slice(0, 8)}`
+  CLEANUP_PREFIXES.push(id)
+  return id
 }
 
 async function uploadCsv(page: Page, csv: string) {
