@@ -379,7 +379,7 @@ export function describeDistance(position: QueuePosition): string {
     return group.status === 'skipped' ? 'This group was passed over.' : 'This photo is done.'
   }
   if (groupsAway === 0) return 'You are being photographed now.'
-  if (groupsAway === 1) return 'You are next — start making your way over.'
+  if (groupsAway === 1) return 'You are next. Start making your way over.'
 
   const distance = `You are ${groupsAway} groups away.`
   return minutesAway === null ? distance : `${distance} Roughly ${minutesAway} minutes.`

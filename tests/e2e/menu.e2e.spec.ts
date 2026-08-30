@@ -159,7 +159,7 @@ test.describe('guests choosing meals', () => {
 
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
     await guestPage.getByText(`${id} beef`, { exact: true }).click()
     await guestPage.getByRole('button', { name: /send our response/i }).click()
@@ -189,7 +189,7 @@ test.describe('guests choosing meals', () => {
     await guestPage.goto(invitationUrl)
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
     await guestPage.getByText(`${id} beef`, { exact: true }).click()
     await guestPage.getByRole('button', { name: /send our response/i }).click()
@@ -234,7 +234,7 @@ test.describe('guests choosing meals', () => {
     await guestPage.goto(invitationUrl)
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
     await guestPage.getByText(`${id} beef`, { exact: true }).click()
     await guestPage.getByRole('button', { name: /send our response/i }).click()
@@ -247,7 +247,7 @@ test.describe('guests choosing meals', () => {
     await guestPage.goto(invitationUrl)
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Regretfully declines')
+      .getByText("Sorry, I can't make it")
       .click()
     await guestPage.getByRole('button', { name: /update our response/i }).click()
     await expect(guestPage.getByRole('status')).toBeVisible()
@@ -270,7 +270,7 @@ test.describe('guests choosing meals', () => {
     await guestPage.goto(invitationUrl)
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
 
     // The adult guest never sees it.
@@ -287,7 +287,7 @@ test.describe('guests choosing meals', () => {
     await guestPage.goto(invitationUrl)
     await guestPage
       .getByRole('group', { name: `Eater ${id}` })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
 
     await expect(guestPage.getByText(`${id} nuggets`, { exact: true })).toBeVisible()

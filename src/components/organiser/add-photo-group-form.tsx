@@ -73,7 +73,7 @@ export function AddPhotoGroupForm({ className }: { className?: string }) {
       </div>
 
       <p className="mt-2 text-xs text-organiser-muted">
-        Minutes are only an estimate — guests use them to judge when to start heading over.
+        Minutes are only an estimate. Guests use them to judge when to start heading over.
       </p>
 
       {state.error ? (

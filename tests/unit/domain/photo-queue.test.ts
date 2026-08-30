@@ -326,7 +326,7 @@ describe('describeDistance', () => {
   })
 
   it('gets the next group walking', () => {
-    expect(at(3)).toBe('You are next — start making your way over.')
+    expect(at(3)).toBe('You are next. Start making your way over.')
   })
 
   it('stays calm at a distance', () => {

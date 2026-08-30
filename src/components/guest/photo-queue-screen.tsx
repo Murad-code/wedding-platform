@@ -46,7 +46,7 @@ export function PhotoQueueScreen({
           <p className="text-guest-muted">The photographs have not been planned yet.</p>
         ) : view.summary.isFinished ? (
           <p className="font-guest-display text-2xl">
-            That is every photograph done. Thank you — go and enjoy the party.
+            That is every photograph done. Thank you. Go and enjoy the party.
           </p>
         ) : (
           <>

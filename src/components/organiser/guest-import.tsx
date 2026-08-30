@@ -100,7 +100,7 @@ export function GuestImport({ className }: { className?: string }) {
           <input type="hidden" name="csv" value={preview.csv ?? ''} />
 
           <h2 className="text-sm font-semibold">
-            Ready to import — first {preview.preview.length} shown
+            Ready to import. First {preview.preview.length} shown
           </h2>
 
           <ul className="mt-3 divide-y divide-organiser-border text-sm">
@@ -160,7 +160,7 @@ function RowIssues({
       <ul className="mt-2 space-y-1 text-sm">
         {issues.slice(0, 20).map((issue) => (
           <li key={`${issue.line}-${issue.message}`}>
-            <span className="font-mono text-xs">Line {issue.line}</span> — {issue.message}
+            <span className="font-mono text-xs">Line {issue.line}</span>: {issue.message}
           </li>
         ))}
       </ul>

@@ -64,7 +64,7 @@ export default async function PhotoGroupsPage() {
 
         {groups.length === 0 ? (
           <p className="mt-3 rounded-lg border border-dashed border-organiser-border p-6 text-center text-sm text-organiser-muted">
-            No photographs yet. Add the first one above — most couples end up with between ten and
+            No photographs yet. Add the first one above. Most couples end up with between ten and
             twenty.
           </p>
         ) : (

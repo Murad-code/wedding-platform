@@ -112,9 +112,7 @@ export function QueueController({
           </>
         ) : (
           <p className="mt-2 text-lg text-organiser-muted">
-            {summary.isFinished
-              ? 'All done — every photograph has been taken.'
-              : 'Not started yet.'}
+            {summary.isFinished ? 'All done. Every photograph has been taken.' : 'Not started yet.'}
           </p>
         )}
       </section>

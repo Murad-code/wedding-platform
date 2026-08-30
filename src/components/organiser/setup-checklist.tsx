@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     title: 'Build your guest list',
-    why: 'Group people into invitation parties — households respond together.',
+    why: 'Group people into invitation parties. Households reply together.',
     href: '/dashboard/guests',
     action: 'Add guests',
   },

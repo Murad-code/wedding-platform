@@ -145,7 +145,7 @@ export default async function MenuPage() {
 
         {menu.length === 0 ? (
           <p className="mt-3 rounded-lg border border-dashed border-organiser-border p-8 text-center text-sm text-organiser-muted">
-            No courses yet. Add a starter, a main, and a dessert — or a single course if you are
+            No courses yet. Add a starter, a main, and a dessert, or a single course if you are
             serving one thing.
           </p>
         ) : (
@@ -182,7 +182,7 @@ export default async function MenuPage() {
                             <span className="ml-2 text-xs text-organiser-muted">vegetarian</span>
                           ) : null}
                           {option.isGlutenFree ? (
-                            <span className="ml-2 text-xs text-organiser-muted">gluten free</span>
+                            <span className="ml-2 text-xs text-organiser-muted">gluten-free</span>
                           ) : null}
                         </span>
                         <DeleteMenuItemButton kind="option" id={option.id} label={option.name} />
@@ -191,7 +191,7 @@ export default async function MenuPage() {
                   </ul>
                 ) : (
                   <p className="mt-3 text-sm text-organiser-muted">
-                    No options yet — guests cannot choose this course until it has some.
+                    No options yet. Guests cannot choose this course until it has some.
                   </p>
                 )}
 

@@ -104,11 +104,11 @@ test.describe('invitation and RSVP', () => {
     // Partial household attendance: one attends, one declines.
     await guestPage
       .getByRole('group', { name: 'Murad Kamali' })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
     await guestPage
       .getByRole('group', { name: 'Priya Kamali' })
-      .getByText('Regretfully declines')
+      .getByText("Sorry, I can't make it")
       .click()
 
     // Dietary details are only asked of the attending guest.
@@ -143,7 +143,7 @@ test.describe('invitation and RSVP', () => {
 
     await guestPage
       .getByRole('group', { name: 'Murad Kamali' })
-      .getByText('Joyfully accepts')
+      .getByText("Yes, I'll be there")
       .click()
     await guestPage.getByRole('button', { name: /send our response/i }).click()
     await expect(guestPage.getByRole('status')).toBeVisible()
@@ -158,7 +158,7 @@ test.describe('invitation and RSVP', () => {
 
     await guestPage
       .getByRole('group', { name: 'Murad Kamali' })
-      .getByText('Regretfully declines')
+      .getByText("Sorry, I can't make it")
       .click()
     await guestPage.getByRole('button', { name: /update our response/i }).click()
     await expect(guestPage.getByRole('status')).toBeVisible()

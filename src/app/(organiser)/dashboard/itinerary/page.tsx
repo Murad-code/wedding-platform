@@ -49,7 +49,7 @@ export default async function ItineraryPage() {
 
         {entries.length === 0 ? (
           <p className="rounded-lg border border-dashed border-organiser-border p-8 text-center text-sm text-organiser-muted">
-            Nothing scheduled yet. Add the first moment below — guest arrival is a good start.
+            Nothing scheduled yet. Add the first moment below. Guest arrival is a good start.
           </p>
         ) : (
           <ul className="divide-y divide-organiser-border overflow-hidden rounded-lg border border-organiser-border bg-organiser-surface">

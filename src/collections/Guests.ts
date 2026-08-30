@@ -84,7 +84,7 @@ export const Guests: CollectionConfig = {
       index: true,
       admin: {
         description:
-          'Has this guest agreed to receive text messages? Required before any SMS is sent — a phone number on its own is not permission.',
+          'Has this guest agreed to receive text messages? Required before any SMS is sent. A phone number on its own is not permission.',
       },
     },
     {

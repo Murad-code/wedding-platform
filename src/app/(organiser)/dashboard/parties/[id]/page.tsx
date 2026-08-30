@@ -101,7 +101,7 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
         </h2>
         <p className="mt-1 text-sm text-organiser-muted">
           Anyone with this link can see and answer this party’s invitation, so share it only with
-          them. We never store the link itself — issuing a new one replaces the old.
+          them. We never store the link itself. Issuing a new one replaces the old.
         </p>
         <InvitationLink partyId={partyId} hasInvitation={hasInvitation} className="mt-4" />
       </section>

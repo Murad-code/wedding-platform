@@ -18,8 +18,8 @@ export default async function MenuPage() {
   return (
     <PageShell
       settings={settings}
-      title="What we’ll be eating"
-      intro="You’ll be asked to choose when you reply to your invitation."
+      title="The menu"
+      intro="You can choose when you reply to your invitation."
     >
       <div className="space-y-10">
         {menu.map((course) => (
@@ -47,7 +47,7 @@ export default async function MenuPage() {
                     ) : null}
                     {option.isGlutenFree ? (
                       <span className="ml-2 text-xs tracking-wide text-guest-muted uppercase">
-                        gluten free
+                        gluten-free
                       </span>
                     ) : null}
                   </p>

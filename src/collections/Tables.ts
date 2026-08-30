@@ -39,7 +39,7 @@ export const Tables: CollectionConfig = {
       min: 1,
       max: 100,
       admin: {
-        description: 'Advisory. You can seat more — we will warn, not refuse.',
+        description: 'Advisory. You can seat more. We will warn, not refuse.',
       },
     },
     {

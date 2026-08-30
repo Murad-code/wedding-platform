@@ -28,7 +28,7 @@ export default async function SeatingPage() {
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Seating plan</h1>
       <p className="mt-1 text-sm text-organiser-muted">
         Only guests who have accepted appear here. Drag people onto a table, or use the menu on each
-        name — both work the same way.
+        name. Both work the same way.
       </p>
 
       {/* The planner holds its own optimistic state. Keying on the table set means

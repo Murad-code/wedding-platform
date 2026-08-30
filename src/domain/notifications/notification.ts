@@ -127,7 +127,7 @@ export type BuiltMessage = { subject: string; body: string }
  * rather than what has happened.
  */
 export function buildMessage(type: NotificationType, context: MessageContext): BuiltMessage {
-  const from = context.coupleNames ? ` — ${context.coupleNames}` : ''
+  const from = context.coupleNames ? `, from ${context.coupleNames}` : ''
   const firstName = context.guestName.split(' ')[0] ?? context.guestName
 
   if (type === 'photo.get-ready') {

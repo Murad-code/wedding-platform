@@ -52,7 +52,7 @@ export const WeddingContacts: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: {
-        description: 'Off by default — turn on only for people happy to be contacted.',
+        description: 'Off by default. Turn on only for people happy to be contacted.',
       },
     },
   ],

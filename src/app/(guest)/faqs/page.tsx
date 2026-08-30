@@ -15,7 +15,7 @@ export default async function FaqsPage() {
   }
 
   return (
-    <PageShell settings={settings} title="Questions" intro="A few things guests often ask us.">
+    <PageShell settings={settings} title="Questions" intro="A few things people often ask.">
       <dl className="space-y-8">
         {settings.faqs.map((faq) => (
           <div key={faq.question}>

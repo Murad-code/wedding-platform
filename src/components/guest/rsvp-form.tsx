@@ -148,7 +148,7 @@ export function RsvpForm({
           role="status"
           className="rounded-xl border border-status-attending/40 bg-status-attending/5 px-4 py-3 text-sm text-status-attending"
         >
-          Thank you — your response has been saved. You can change it any time before the deadline.
+          Thank you. Your reply has been saved. You can change it any time before the deadline.
         </p>
       ) : null}
 
@@ -178,7 +178,7 @@ export function RsvpForm({
                     onChange={() => setAnswer(guest.id, { rsvpStatus: 'attending' })}
                     tone="attending"
                   >
-                    Joyfully accepts
+                    Yes, I'll be there
                   </ChoiceButton>
                   <ChoiceButton
                     name={`status-${guest.id}`}
@@ -186,7 +186,7 @@ export function RsvpForm({
                     onChange={() => setAnswer(guest.id, { rsvpStatus: 'declined' })}
                     tone="declined"
                   >
-                    Regretfully declines
+                    Sorry, I can't make it
                   </ChoiceButton>
                 </div>
 

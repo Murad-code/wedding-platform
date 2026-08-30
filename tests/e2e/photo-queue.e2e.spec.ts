@@ -344,7 +344,7 @@ test.describe('the guest screen', () => {
     await expect(guestPage.getByRole('region', { name: 'Your photo' })).toContainText(
       `${id} theirs`,
     )
-    await expect(guestPage.getByText('You are next — start making your way over.')).toBeVisible()
+    await expect(guestPage.getByText('You are next. Start making your way over.')).toBeVisible()
 
     // Called over: the wording changes with proximity (docs/UX.md §4.2).
     await page.goto('/dashboard/photos/run')

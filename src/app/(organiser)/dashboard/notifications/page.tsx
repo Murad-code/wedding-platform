@@ -60,8 +60,8 @@ export default async function NotificationsPage() {
       <header className="mt-3">
         <h1 className="text-2xl font-semibold tracking-tight">Messages</h1>
         <p className="mt-1 text-sm text-organiser-muted">
-          Emails and texts the platform has sent to guests. Nothing here is sent by hand — it
-          follows what happens on the day.
+          Emails and texts sent to guests. These go out automatically from what happens on the day,
+          not by hand.
         </p>
       </header>
 

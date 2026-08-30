@@ -28,7 +28,7 @@ export function InvitationLink({
     <div className={className}>
       {url ? (
         <div className="rounded-lg border border-status-attending/40 bg-status-attending/5 p-4">
-          <p className="text-sm font-medium">Copy this link now — it is shown only once.</p>
+          <p className="text-sm font-medium">Copy this link now. It is shown only once.</p>
           <code
             data-testid="invitation-url"
             className="mt-2 block break-all rounded-md bg-organiser-surface px-3 py-2 font-mono text-xs"

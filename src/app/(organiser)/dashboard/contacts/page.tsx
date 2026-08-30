@@ -25,8 +25,8 @@ export default async function ContactsPage() {
 
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Wedding contacts</h1>
       <p className="mt-1 text-sm text-organiser-muted">
-        Keep supplier numbers here too — only contacts you mark as visible appear on the guest
-        website.
+        You can keep supplier numbers here too. Only contacts you mark as visible appear on the
+        guest website.
       </p>
 
       <section className="mt-8" aria-labelledby="contacts-heading">

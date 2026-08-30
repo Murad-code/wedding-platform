@@ -246,7 +246,7 @@ export interface Guest {
   email?: string | null;
   phone?: string | null;
   /**
-   * Has this guest agreed to receive text messages? Required before any SMS is sent — a phone number on its own is not permission.
+   * Has this guest agreed to receive text messages? Required before any SMS is sent. A phone number on its own is not permission.
    */
   smsConsent?: boolean | null;
   /**
@@ -283,7 +283,7 @@ export interface Table {
    */
   name: string;
   /**
-   * Advisory. You can seat more — we will warn, not refuse.
+   * Advisory. You can seat more. We will warn, not refuse.
    */
   capacity: number;
   shape: 'round' | 'rectangle' | 'head';
@@ -433,7 +433,7 @@ export interface WeddingContact {
   whatsapp?: string | null;
   email?: string | null;
   /**
-   * Off by default — turn on only for people happy to be contacted.
+   * Off by default. Turn on only for people happy to be contacted.
    */
   visibleToGuests?: boolean | null;
   updatedAt: string;

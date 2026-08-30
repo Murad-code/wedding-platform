@@ -27,7 +27,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     if (!response.ok) {
       // Deliberately generic: distinguishing "no such account" from "wrong password"
       // would let anyone enumerate organiser email addresses.
-      setError('Those details did not match. Please try again.')
+      setError('Those details did not match. Try again.')
       setPending(false)
       return
     }

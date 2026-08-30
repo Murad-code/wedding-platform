@@ -114,7 +114,7 @@ export function InvitationView({
           />
         ) : (
           <p className="mt-4 rounded-xl border border-guest-border bg-guest-surface p-4 text-guest-muted">
-            The RSVP deadline has passed. Please contact the couple directly if you need to change
+            The RSVP deadline has passed. Contact the couple directly if you need to change
             anything.
           </p>
         )}

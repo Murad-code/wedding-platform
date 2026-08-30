@@ -25,9 +25,9 @@ export default async function ImportGuestsPage() {
         Import guests from a spreadsheet
       </h1>
       <p className="mt-2 text-sm text-organiser-muted">
-        Export your spreadsheet as CSV. We’ll show you what will happen before anything is saved,
-        and re-importing a corrected file is safe — guests already on the list are skipped rather
-        than duplicated.
+        Export your spreadsheet as CSV. We will show you what will happen before anything is saved.
+        Re-importing a corrected file is safe: guests already on the list are skipped rather than
+        duplicated.
       </p>
 
       <section className="mt-6 rounded-lg border border-organiser-border bg-organiser-surface p-4">

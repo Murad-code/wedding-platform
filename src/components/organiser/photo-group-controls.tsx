@@ -131,7 +131,7 @@ export function AddMemberForm({
           {candidates.map((guest) => (
             <option key={guest.id} value={guest.id}>
               {guest.displayName}
-              {guest.partyName ? ` — ${guest.partyName}` : ''}
+              {guest.partyName ? ` (${guest.partyName})` : ''}
             </option>
           ))}
         </select>

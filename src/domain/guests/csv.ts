@@ -239,7 +239,7 @@ export function parseGuestCsv(input: string): ParsedGuestCsv {
     const firstName = cell(record, headers.get('firstName'))
 
     if (!party) {
-      errors.push({ line, message: 'Missing party — every guest must belong to a group.' })
+      errors.push({ line, message: 'Missing party. Every guest must belong to a group.' })
       continue
     }
     if (!firstName) {

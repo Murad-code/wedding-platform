@@ -138,7 +138,7 @@ const PARTIES: { name: string; plusOnesAllowed?: number; guests: SeedGuest[] }[]
         firstName: 'Luca',
         lastName: 'Bianchi',
         rsvpStatus: 'attending',
-        dietaryRequirements: 'Coeliac — gluten free',
+        dietaryRequirements: 'Coeliac, gluten-free',
       },
       { firstName: 'Sofia', lastName: 'Bianchi', rsvpStatus: 'attending' },
       { firstName: 'Marco', lastName: 'Bianchi', rsvpStatus: 'declined' },

@@ -32,7 +32,7 @@ export default async function RsvpPage() {
           <>
             <p>
               Everyone invited has their own private link. Look for it in the message or invitation
-              you received from us — opening it will show your names and let you reply for everyone
+              you received from us. Opening it will show your names and let you reply for everyone
               in your group.
             </p>
             {deadline ? (
@@ -42,7 +42,7 @@ export default async function RsvpPage() {
               </p>
             ) : null}
             <p className="text-guest-muted">
-              If you cannot find your link, send us a message and we will resend it.
+              If you cannot find your link, send us a message and we will send it again.
             </p>
           </>
         ) : (

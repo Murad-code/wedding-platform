@@ -32,7 +32,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     meta: {
-      titleSuffix: '— Wedding Platform',
+      titleSuffix: '| Wedding Platform',
     },
   },
   collections: [

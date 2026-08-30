@@ -62,7 +62,7 @@ export default async function PartiesPage({
 
         {parties.totalDocs === 0 ? (
           <p className="mt-4 rounded-lg border border-dashed border-organiser-border p-8 text-center text-sm text-organiser-muted">
-            No invitation parties yet. Add the first one above — a household, a couple, or a single
+            No invitation parties yet. Add the first one above: a household, a couple, or a single
             guest.
           </p>
         ) : (
