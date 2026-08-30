@@ -62,18 +62,36 @@ async function createGroups(page: Page, names: string[]) {
 
 const region = (page: Page, name: string) => page.getByRole('region', { name })
 
+/**
+ * Presses a controller button and waits for the press to finish.
+ *
+ * Clicking again while the previous action is still settling dispatches the click at a
+ * node React is in the middle of replacing, and the handler never runs — which looks
+ * exactly like a button that does nothing.
+ */
+async function press(page: Page, name: string) {
+  await page.getByRole('button', { name, exact: true }).click()
+  await expect(page.locator('[data-pending="false"]')).toBeVisible()
+}
+
 /** Creates attending guests in their own party and returns their display names. */
-async function createAttendingGuests(page: Page, id: string, count: number) {
+async function createAttendingGuests(
+  page: Page,
+  id: string,
+  count: number,
+  { withEmail = false }: { withEmail?: boolean } = {},
+) {
   await page.goto('/dashboard/guests/import')
   const rows = Array.from(
     { length: count },
-    (_, index) => `${id},Photo${index},${id},adult,attending`,
+    (_, index) =>
+      `${id},Photo${index},${id},adult,attending,${withEmail ? `photo${index}.${id}@example.test` : ''}`,
   ).join('\n')
 
   await page.getByLabel('CSV file').setInputFiles({
     name: 'guests.csv',
     mimeType: 'text/csv',
-    buffer: Buffer.from(`party,firstName,lastName,ageGroup,rsvpStatus\n${rows}`, 'utf8'),
+    buffer: Buffer.from(`party,firstName,lastName,ageGroup,rsvpStatus,email\n${rows}`, 'utf8'),
   })
   await page.getByRole('button', { name: 'Check file' }).click()
   await page.getByRole('button', { name: 'Import these guests' }).click()
@@ -185,11 +203,11 @@ test.describe('the wedding-day controller', () => {
     await expect(region(page, 'Now')).toContainText('Not started yet')
     await expect(region(page, 'Up next')).toContainText(`${id} one`)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
     await expect(region(page, 'Up next')).toContainText(`${id} two`)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} two`)
     await expect(page.locator(`li[data-queue-status="completed"]`)).toHaveCount(1)
   })
@@ -202,12 +220,12 @@ test.describe('the wedding-day controller', () => {
     await signIn(page, accounts.organiser)
     await openController(page, id)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
 
     // The photographer pauses between groups; advancing here would have people stood
     // waiting in the sun.
-    await page.getByRole('button', { name: 'Complete' }).click()
+    await press(page, 'Complete')
     await expect(region(page, 'Now')).toContainText('Not started yet')
     await expect(region(page, 'Up next')).toContainText(`${id} two`)
   })
@@ -216,10 +234,10 @@ test.describe('the wedding-day controller', () => {
     await signIn(page, accounts.organiser)
     await openController(page, id)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
 
-    await page.getByRole('button', { name: 'Skip' }).click()
+    await press(page, 'Skip')
     await expect(region(page, 'Now')).toContainText(`${id} two`)
     await expect(page.locator('li[data-queue-status="skipped"]')).toHaveCount(1)
   })
@@ -228,12 +246,12 @@ test.describe('the wedding-day controller', () => {
     await signIn(page, accounts.organiser)
     await openController(page, id)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} two`)
 
     // Someone was missing and has now arrived — the commonest wedding-day correction.
-    await page.getByRole('button', { name: 'Previous' }).click()
+    await press(page, 'Previous')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
     await expect(region(page, 'Up next')).toContainText(`${id} two`)
   })
@@ -246,7 +264,7 @@ test.describe('the wedding-day controller', () => {
     await signIn(page, accounts.organiser)
     await openController(page, id)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
 
     await page.reload()
@@ -269,12 +287,12 @@ test.describe('the wedding-day controller', () => {
     await stale.goto('/dashboard/photos/run')
     await expect(stale.getByRole('region', { name: 'Up next' })).toContainText(`${id} one`)
 
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(region(page, 'Now')).toContainText(`${id} one`)
 
     // Without the revision check this press would call group two, and group one would
     // never be photographed.
-    await stale.getByRole('button', { name: 'Call next' }).click()
+    await stale.getByRole('button', { name: 'Call next', exact: true }).click()
     await expect(stale.getByRole('status').filter({ hasText: /moved the queue/i })).toBeVisible()
     await expect(stale.getByRole('region', { name: 'Now' })).toContainText(`${id} one`)
 
@@ -330,7 +348,7 @@ test.describe('the guest screen', () => {
 
     // Called over: the wording changes with proximity (docs/UX.md §4.2).
     await page.goto('/dashboard/photos/run')
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
     await expect(guestPage.getByText('You are being photographed now.')).toBeVisible()
 
     await guestPage.close()
@@ -356,7 +374,7 @@ test.describe('the guest screen', () => {
     await expect(guestPage.locator('[data-connection="live"]')).toBeVisible()
 
     await page.goto('/dashboard/photos/run')
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
 
     await expect(guestPage.getByRole('region', { name: 'Now' })).toContainText(`${id} one`)
     await expect(guestPage.getByRole('region', { name: 'Up next' })).toContainText(`${id} two`)
@@ -383,7 +401,7 @@ test.describe('the guest screen', () => {
     // Venue wifi, mid-ceremony.
     await guestContext.setOffline(true)
     await page.goto('/dashboard/photos/run')
-    await page.getByRole('button', { name: 'Call next' }).click()
+    await press(page, 'Call next')
 
     await guestContext.setOffline(false)
 
@@ -455,5 +473,147 @@ test.describe('what the photo queue never reveals', () => {
     await expect(page).toHaveURL(/\/login/)
 
     await anonymous.close()
+  })
+})
+
+test.describe('telling guests their photograph is coming up', () => {
+  /** Puts `count` attending guests into a photograph at the front of the run. */
+  async function stageGroup(page: Page, id: string, count: number, withEmail: boolean) {
+    await emptyQueue(page)
+    await createAttendingGuests(page, id, count, { withEmail })
+    await createGroups(page, [`${id} first`, `${id} second`])
+
+    const groups = await page.request.get(`/api/photo-groups?where[name][contains]=${id}&limit=10`)
+    const first = (await groups.json()).docs.find((group: { name: string }) =>
+      group.name.endsWith('first'),
+    )
+
+    const guests = await page.request.get(`/api/guests?where[lastName][equals]=${id}&limit=10`)
+    const guestIds = (await guests.json()).docs.map((guest: { id: number }) => guest.id)
+
+    await page.request.patch(`/api/photo-groups/${first.id}`, { data: { members: guestIds } })
+  }
+
+  test('calling a group queues a message for everyone in it', async ({ page, accounts, id }) => {
+    await signIn(page, accounts.organiser)
+    await stageGroup(page, id, 2, true)
+
+    await page.goto('/dashboard/photos/run')
+    await press(page, 'Call next')
+
+    await expect(page.getByRole('status').filter({ hasText: 'messaged' })).toContainText(
+      '2 guests messaged',
+    )
+
+    // Sending happens after the response, so the page shows it once the work has run.
+    await page.goto('/dashboard/notifications')
+    await expect(page.getByRole('row').filter({ hasText: `Photo0 ${id}` })).toContainText(
+      'photo.now',
+    )
+  })
+
+  test('the message is really sent, after the organiser’s response has gone out', async ({
+    page,
+    accounts,
+    id,
+  }) => {
+    await signIn(page, accounts.organiser)
+    await stageGroup(page, id, 1, true)
+
+    await page.goto('/dashboard/photos/run')
+    await press(page, 'Call next')
+    await expect(page.getByRole('status').filter({ hasText: 'messaged' })).toBeVisible()
+
+    // Delivery deliberately happens *after* the response, so this polls the record rather
+    // than assuming the send has already run. In development and CI the provider is the
+    // console one — no network, no cost, nobody actually messaged.
+    await expect
+      .poll(
+        async () => {
+          const rows = await page.request.get('/api/notifications?limit=20&sort=-createdAt')
+          const docs = (await rows.json()).docs as { body: string; status: string }[]
+          return docs.find((row) => row.body.includes(`${id} first`))?.status
+        },
+        { timeout: 15_000 },
+      )
+      .toBe('sent')
+  })
+
+  test('a guest with no way to be reached is reported, not silently skipped', async ({
+    page,
+    accounts,
+    id,
+  }) => {
+    await signIn(page, accounts.organiser)
+    await stageGroup(page, id, 1, false)
+
+    await page.goto('/dashboard/photos/run')
+    await press(page, 'Call next')
+
+    // Someone now has to go and find them, so this stays on screen rather than being
+    // announced once.
+    await expect(page.getByText(/no way to be messaged/i)).toBeVisible()
+  })
+
+  test('stepping back and re-calling does not message anyone twice', async ({
+    page,
+    accounts,
+    id,
+  }) => {
+    await signIn(page, accounts.organiser)
+    await stageGroup(page, id, 1, true)
+
+    await page.goto('/dashboard/photos/run')
+    await press(page, 'Call next')
+    await expect(page.getByRole('status').filter({ hasText: 'messaged' })).toContainText(
+      '1 guest messaged',
+    )
+
+    await press(page, 'Call next')
+    await expect(region(page, 'Now')).toContainText(`${id} second`)
+    await press(page, 'Previous')
+    await expect(region(page, 'Now')).toContainText(`${id} first`)
+
+    // The unique dedupe key refuses the repeat, so nobody is texted twice about the same
+    // photograph.
+    const rows = await page.request.get(
+      `/api/notifications?where[type][equals]=photo.now&limit=100&depth=1`,
+    )
+    const forThisGuest = (await rows.json()).docs.filter((row: { body: string }) =>
+      row.body.includes(`${id} first`),
+    )
+    expect(forThisGuest).toHaveLength(1)
+  })
+
+  test('the group after the current one is warned that it is next', async ({
+    page,
+    accounts,
+    id,
+  }) => {
+    await signIn(page, accounts.organiser)
+    await stageGroup(page, id, 1, true)
+
+    // The same guest is in the second photograph too, so one press produces both
+    // messages: "you are up now" for the group being taken, "you are next" for the one
+    // after it.
+    const groups = await page.request.get(`/api/photo-groups?where[name][contains]=${id}&limit=10`)
+    const second = (await groups.json()).docs.find((group: { name: string }) =>
+      group.name.endsWith('second'),
+    )
+    const guests = await page.request.get(`/api/guests?where[lastName][equals]=${id}&limit=10`)
+    const guestIds = (await guests.json()).docs.map((guest: { id: number }) => guest.id)
+    await page.request.patch(`/api/photo-groups/${second.id}`, { data: { members: guestIds } })
+
+    await page.goto('/dashboard/photos/run')
+    await press(page, 'Call next')
+    // The click only dispatches the action; reading the record before it has finished
+    // would be racing the server.
+    await expect(page.getByRole('status').filter({ hasText: 'messaged' })).toBeVisible()
+
+    const rows = await page.request.get('/api/notifications?limit=20&sort=-createdAt')
+    const bodies = (await rows.json()).docs.map((row: { body: string }) => row.body)
+
+    expect(bodies.some((body: string) => body.includes('start making your way over'))).toBe(true)
+    expect(bodies.some((body: string) => body.includes('photographer is ready'))).toBe(true)
   })
 })

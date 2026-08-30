@@ -16,6 +16,7 @@ export type EditableGuest = {
   isPlusOne: boolean
   email: string
   phone: string
+  smsConsent: boolean
   dietaryRequirements: string
   allergies: string
   accessibilityNeeds: string
@@ -83,6 +84,26 @@ export function EditGuestForm({ guest, className }: { guest: EditableGuest; clas
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="email" label="Email" type="email" defaultValue={guest.email} />
           <Field id="phone" label="Phone" defaultValue={guest.phone} />
+        </div>
+
+        <div className="flex items-start gap-2 text-sm">
+          <input
+            id="smsConsent"
+            type="checkbox"
+            name="smsConsent"
+            defaultChecked={guest.smsConsent}
+            aria-describedby="smsConsent-help"
+            className="mt-1"
+          />
+          <div>
+            {/* The caveat is a description rather than part of the label, so a screen
+                reader announces a short name and then the explanation. */}
+            <label htmlFor="smsConsent">This guest has agreed to receive text messages</label>
+            <p id="smsConsent-help" className="text-xs text-organiser-muted">
+              Only tick this if they actually said yes. A phone number on its own is not permission,
+              and the date you tick it is recorded.
+            </p>
+          </div>
         </div>
       </fieldset>
 

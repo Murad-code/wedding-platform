@@ -450,3 +450,74 @@ IP.
 per-address limit would shut out the entire room at exactly the moment the feature
 matters. A global cap protects the server, and anyone turned away falls back to polling
 rather than seeing a broken screen.
+
+---
+
+## ADR-023 — Deduplication is a unique index, not a check in code
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** The same guest must not be told twice that their photograph is next. The
+obvious implementation asks "have we already sent this?" before sending.
+
+**Decision.** Every notification carries a `dedupeKey` of `type:subject:guest` under a
+`UNIQUE` index. Sending is attempted by inserting; a lost race surfaces as a duplicate-key
+error and is treated as "already handled".
+
+**Rationale.** A read-then-write check has a window between the two, and this is exactly
+the code that runs concurrently: two organisers on two controllers, a retry pass, and an
+in-process timer can all decide to send the same message. The database is the only place
+that can settle it. An integration test proves it with three simultaneous callers on one
+key producing one row.
+
+**Consequence.** The `catch` must distinguish a duplicate key from any other failure — a
+database that is down would otherwise look like "already sent" and the guest would never
+be told. A guest who cannot be reached gets no row at all, so adding their email ten
+minutes later still works rather than being silently deduplicated away.
+
+---
+
+## ADR-024 — Wedding-day messages expire instead of retrying patiently
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** Standard delivery retry backs off over minutes or hours to survive a
+provider outage.
+
+**Decision.** Four attempts at 1s, 4s, and 16s, and every message carries a maximum age —
+five minutes for "you are up now", ten for "you are next". A message older than that is
+abandoned and recorded as failed.
+
+**Rationale.** "Start making your way over" delivered twenty minutes late is not a late
+success, it is a wrong instruction: the guest walks over to an empty spot and the
+photographer has moved on. The usefulness of these messages is measured in minutes, so
+retrying past that window would deliver harm rather than value.
+
+**Consequence.** The organiser's controller reports how many guests could not be reached
+at the moment the group was called, because a message that will never arrive is something
+a person has to fix by walking over and saying so.
+
+---
+
+## ADR-025 — Delivery is scheduled with `after()` and an in-process timer
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** Sending must not block an organiser's request, and retries need something to
+wake them up. A job runner (BullMQ, a worker container, a hosted queue) is the
+conventional answer.
+
+**Decision.** The action returns; `after()` runs a dispatch pass once the response has
+gone out; anything still queued is picked up by a single in-process timer. An
+organiser-only `POST /api/notifications/dispatch` forces a pass.
+
+**Rationale.** One wedding runs one container (ADR-001), so a queue service would be new
+infrastructure to deploy, monitor, and pay for on behalf of work that amounts to a few
+dozen messages across one afternoon. The failure mode of the simple version is bounded:
+a restart mid-backoff loses a pending retry, and ADR-024 means those messages were close
+to worthless anyway.
+
+**Consequence.** This is explicitly best-effort, and the endpoint exists so a person or an
+external scheduler can recover. If notifications ever become something a couple depends on
+outside the wedding day — invitations, reminders — this decision should be revisited
+before that work starts, not after.

@@ -140,12 +140,15 @@ erDiagram
         uuid   guest FK
         string dedupeKey UK
         enum   channel "email|sms"
-        string type
+        enum   type "photo.get-ready|photo.now"
         string provider
         enum   status "queued|sending|sent|failed"
+        string subject
+        text   body
         string providerMessageId
         int    attempts
         date   lastAttemptAt
+        date   nextAttemptAt
         text   error
     }
 
@@ -231,6 +234,9 @@ a party removes its guests).
 - `table` is a nullable FK. `NULL` means unassigned, which is exactly the
   "unassigned guests" query the seating planner needs.
 - `isPlusOne` marks a placeholder seat the inviting guest may name later.
+- `smsConsent` / `smsConsentAt` record explicit opt-in for text messages, stamped when it
+  is given and cleared when withdrawn. A phone number is never treated as permission, and
+  consent is never inherited from the party.
 - `ageGroup` drives children's menu eligibility and adult/child counts for the caterer.
 - PII (`email`, `phone`, dietary, allergies, accessibility) is minimised and never logged.
 
@@ -289,7 +295,16 @@ if it has fallen behind (ADR-020).
 
 One row per delivery attempt chain. `dedupeKey` is **unique** — this is the deduplication
 mechanism the brief requires, enforced by the database rather than by application logic,
-so concurrent workers cannot double-send.
+so concurrent workers cannot double-send (ADR-023).
+
+Holds **no recipient address**. The address is read from the guest at send time, so a
+corrected email is used rather than a stale copy and there is one fewer place holding
+contact details. The rendered `subject`/`body` _are_ stored — they have to be, to be sent,
+and storing them keeps the dispatcher generic: it never has to know what a photo group is.
+Because the body contains the guest's name, deleting a guest deletes their notifications.
+
+`nextAttemptAt` drives both the retry backoff and the "is anything waiting" query. A row
+with no `nextAttemptAt` will not be tried again.
 
 ### AuditEvents
 
@@ -308,6 +323,9 @@ Provides RSVP history (ADR-009) without a second source of current state.
 | Unassigned + table views   | index on `guests.table`                     |
 | One choice per course      | `UNIQUE (guest, course)` on meal selections |
 | Notification dedupe        | `UNIQUE` on `notifications.dedupe_key`      |
+| Due notifications          | index on `notifications.next_attempt_at`    |
+| Notification status counts | index on `notifications.status`             |
+| SMS eligibility            | index on `guests.sms_consent`               |
 | Queue ordering             | index on `photo_groups.order`               |
 | Queue status filters       | index on `photo_groups.status`              |
 | Unambiguous call-outs      | `UNIQUE` on `photo_groups.name`             |

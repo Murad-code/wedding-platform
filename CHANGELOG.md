@@ -223,3 +223,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `pnpm seed` — deterministic, idempotent development data: six parties, sixteen guests
   covering every RSVP state along with plus-one, child, infant, dietary, allergy, and
   accessibility cases, and five photo groups. Refuses to run when `NODE_ENV=production`.
+
+### Added (Phase 8 — notifications)
+
+- `NotificationProvider` abstraction with console, Resend, and Twilio implementations.
+  The console provider is chosen automatically when a real one is not configured, so
+  development and CI never make a network call, incur a cost, or text a real person.
+- `Notifications` collection with a `UNIQUE dedupeKey`, closed to every write but the
+  application's own.
+- Wedding-day photo alerts: guests in the group being photographed are told they are up,
+  and the group after them is told to start making their way over.
+- Asynchronous delivery — the organiser's action returns immediately and sending happens
+  afterwards — with retry, backoff, and a per-message expiry.
+- `/dashboard/notifications`: what has been sent, what failed and why, and a manual retry.
+- `POST /api/notifications/dispatch` for an external scheduler or a manual drain.
+- Per-guest SMS consent with a timestamp, captured on the RSVP form and the organiser's
+  guest form.
+
+### Security
+
+- SMS requires recorded opt-in consent, checked in one place before any provider is
+  reached. Consent is never inherited from the party, and consent posted to a wedding with
+  SMS switched off is discarded rather than stored.
+- The RSVP form asks for a phone number **only** when the wedding sends texts.
+- Delivery records hold no email address or phone number; the address is read from the
+  guest at send time. Deleting a guest deletes their notifications, which carry the
+  rendered message.
+- Sending is a mutation: the dispatch endpoint and the manual retry are organiser-only.
+
+### Fixed
+
+- Duplicate detection matched Payload's error by class name, which a production build
+  minifies away. The real application therefore rethrew, the server action never returned,
+  and the wedding-day controller's _Previous_ button hung. Detection is now by error shape.
+- An alerting failure could call `rollbackTransaction` on an already-committed
+  transaction. Alerts are now queued after the transaction has settled, and a failure
+  there is logged rather than failing the organiser's press.
+- The controller now exposes `data-pending`, so a second press cannot be dispatched at a
+  DOM node React is in the middle of replacing.
+
+### Testing
+
+- First integration tests (`tests/int/`): deduplication under three concurrent callers,
+  eligibility, delivery, party contact fallback, erasure, photo-queue alerts, and RSVP
+  consent.
+- Two photo-queue E2E tests were racing the server — `click()` returns when the click is
+  dispatched, not when the server action completes.

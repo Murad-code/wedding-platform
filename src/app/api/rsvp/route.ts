@@ -68,7 +68,13 @@ export async function POST(request: Request) {
   }
 
   const menu = settings.features.menu ? await getMenu() : []
-  const result = await submitRsvp({ party, submission: parsed.data, menu, ip })
+  const result = await submitRsvp({
+    party,
+    submission: parsed.data,
+    menu,
+    smsEnabled: settings.features.smsNotifications,
+    ip,
+  })
 
   if (!result.ok) {
     if (result.reason === 'foreign-guest') {

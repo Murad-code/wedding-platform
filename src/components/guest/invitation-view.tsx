@@ -110,6 +110,7 @@ export function InvitationView({
             hasResponded={hasResponded}
             menu={menu}
             selections={selections}
+            smsEnabled={settings.features.smsNotifications}
           />
         ) : (
           <p className="mt-4 rounded-xl border border-guest-border bg-guest-surface p-4 text-guest-muted">

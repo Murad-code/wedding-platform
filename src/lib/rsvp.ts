@@ -22,12 +22,19 @@ export async function submitRsvp({
   party,
   submission,
   menu = [],
+  smsEnabled = false,
   ip,
 }: {
   party: ResolvedParty
   submission: RsvpSubmissionInput
   /** Empty when the menu feature is off, in which case choices are ignored. */
   menu?: readonly MenuCourse[]
+  /**
+   * Whether this wedding sends texts at all. Consent posted to a wedding with SMS
+   * switched off is discarded rather than stored — the client cannot opt a guest in to
+   * something the couple has not enabled (docs/SECURITY.md §6).
+   */
+  smsEnabled?: boolean
   ip?: string | null
 }): Promise<RsvpResult> {
   const partyGuestIds = party.guests.map((guest) => guest.id)
@@ -69,6 +76,13 @@ export async function submitRsvp({
     const respondedAt = new Date().toISOString()
     const submitted = new Map<number, RsvpStatus>()
 
+    // Consent is recorded per guest because that is who it belongs to, but it is given
+    // once by whoever fills the form in for the household — the same person who supplies
+    // the one number they want used. The number itself stays on the party rather than
+    // being copied onto every guest; `recipientsFor` falls back to it.
+    const consented =
+      smsEnabled && submission.smsConsent === true && (submission.contactPhone ?? null) !== null
+
     for (const response of submission.guests) {
       if (!isRsvpStatus(response.rsvpStatus)) continue
       submitted.set(response.guestId, response.rsvpStatus)
@@ -84,6 +98,7 @@ export async function submitRsvp({
           allergies: response.allergies ?? null,
           accessibilityNeeds: response.accessibilityNeeds ?? null,
           respondedAt,
+          ...(smsEnabled ? { smsConsent: consented } : {}),
         },
       })
 

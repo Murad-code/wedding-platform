@@ -14,6 +14,7 @@ import { ItineraryItems } from './collections/ItineraryItems'
 import { MenuCourses } from './collections/MenuCourses'
 import { MenuOptions } from './collections/MenuOptions'
 import { Media } from './collections/Media'
+import { Notifications } from './collections/Notifications'
 import { PhotoGroups } from './collections/PhotoGroups'
 import { Tables } from './collections/Tables'
 import { Tags } from './collections/Tags'
@@ -47,6 +48,7 @@ export default buildConfig({
     ItineraryItems,
     WeddingContacts,
     Media,
+    Notifications,
     AuditEvents,
   ],
   globals: [WeddingSettings, PhotoQueueState],

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { authenticated, mutator } from '@/domain/auth/access'
 import { AGE_GROUPS } from '@/domain/guests/guest'
+import { resolveSmsConsent } from '@/domain/notifications/notification'
 import { RSVP_STATUSES } from '@/domain/rsvp/status'
 
 /**
@@ -77,6 +78,24 @@ export const Guests: CollectionConfig = {
       ],
     },
     {
+      name: 'smsConsent',
+      type: 'checkbox',
+      defaultValue: false,
+      index: true,
+      admin: {
+        description:
+          'Has this guest agreed to receive text messages? Required before any SMS is sent — a phone number on its own is not permission.',
+      },
+    },
+    {
+      name: 'smsConsentAt',
+      type: 'date',
+      admin: {
+        readOnly: true,
+        description: 'Recorded automatically when consent is given, so it can be evidenced later.',
+      },
+    },
+    {
       name: 'dietaryRequirements',
       type: 'textarea',
       maxLength: 500,
@@ -118,6 +137,21 @@ export const Guests: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        // Stamps the moment consent was given or clears it when withdrawn. The rule
+        // itself lives in the domain; the hook only applies it.
+        if (typeof data.smsConsent !== 'boolean') return data
+
+        const change = resolveSmsConsent(
+          originalDoc?.smsConsent === true,
+          data.smsConsent,
+          new Date(),
+        )
+
+        return change.changed ? { ...data, smsConsentAt: change.smsConsentAt } : data
+      },
+    ],
     beforeDelete: [
       async ({ id, req }) => {
         // Payload's foreign keys are ON DELETE SET NULL, so without this a deleted
@@ -125,6 +159,15 @@ export const Guests: CollectionConfig = {
         // that would still be counted in the caterer's totals.
         await req.payload.delete({
           collection: 'guest-meal-selections',
+          where: { guest: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+
+        // The delivery record carries the rendered message, which contains the guest's
+        // name. Erasing the guest has to erase it too.
+        await req.payload.delete({
+          collection: 'notifications',
           where: { guest: { equals: id } },
           req,
           overrideAccess: true,

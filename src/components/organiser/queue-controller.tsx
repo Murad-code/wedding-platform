@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 
 import { performQueueAction } from '@/app/(organiser)/dashboard/photos/actions'
+import type { AlertSummary } from '@/lib/photo-queue'
 import { ConnectionBadge } from '@/components/photo-queue/connection-badge'
 import { usePhotoQueue } from '@/components/photo-queue/use-photo-queue'
 import {
@@ -36,6 +37,7 @@ export function QueueController({
   const { snapshot, connection, applySnapshot } = usePhotoQueue(initial)
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
+  const [unreachable, setUnreachable] = useState(0)
 
   const groups = snapshot.groups
   const current = currentGroup(groups)
@@ -56,9 +58,12 @@ export function QueueController({
       }
 
       const next = currentGroup(result.snapshot.groups)
-      setMessage(
-        next ? `Now photographing ${next.name}.` : 'Nobody is being photographed at the moment.',
-      )
+      const where = next
+        ? `Now photographing ${next.name}.`
+        : 'Nobody is being photographed at the moment.'
+
+      setUnreachable(result.alerts.unreachable)
+      setMessage(`${where} ${describeAlerts(result.alerts)}`)
     })
   }
 
@@ -70,7 +75,15 @@ export function QueueController({
   }
 
   return (
-    <div data-revision={snapshot.revision} className={className}>
+    <div
+      data-revision={snapshot.revision}
+      // A press re-renders this subtree, and a second press landing during that render
+      // can be dispatched at a DOM node React is replacing — the handler never runs. The
+      // buttons disable while a press is in flight; this states the same thing in a way a
+      // test can wait for, rather than waiting on a guess.
+      data-pending={pending ? 'true' : 'false'}
+      className={className}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-organiser-muted">
           {summary.completed + summary.skipped} of {summary.total} done
@@ -151,6 +164,15 @@ export function QueueController({
         {message}
       </p>
 
+      {unreachable > 0 ? (
+        // Worth acting on rather than announcing once and losing: these are the guests
+        // someone now has to go and find.
+        <p className="mt-1 text-center text-sm text-status-declined">
+          {unreachable} {unreachable === 1 ? 'guest has' : 'guests have'} no way to be messaged. You
+          will need to call them over yourself.
+        </p>
+      ) : null}
+
       <section aria-labelledby="remaining-heading" className="mt-6">
         <h2 id="remaining-heading" className="text-sm font-semibold">
           The full run
@@ -180,6 +202,15 @@ export function QueueController({
       </section>
     </div>
   )
+}
+
+/** Deliberately plain: an organiser mid-run should not have to interpret a count. */
+function describeAlerts(alerts: AlertSummary): string {
+  if (alerts.queued === 0 && alerts.unreachable === 0) return ''
+  if (alerts.queued === 0) return 'Nobody could be messaged.'
+
+  const told = `${alerts.queued} ${alerts.queued === 1 ? 'guest' : 'guests'} messaged.`
+  return alerts.unreachable === 0 ? told : `${told} ${alerts.unreachable} could not be.`
 }
 
 function MemberList({ names }: { names: string[] }) {

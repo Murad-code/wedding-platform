@@ -63,6 +63,7 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
           isPlusOne: guest.isPlusOne === true,
           email: guest.email ?? '',
           phone: guest.phone ?? '',
+          smsConsent: guest.smsConsent === true,
           dietaryRequirements: guest.dietaryRequirements ?? '',
           allergies: guest.allergies ?? '',
           accessibilityNeeds: guest.accessibilityNeeds ?? '',

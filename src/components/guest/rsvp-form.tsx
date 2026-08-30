@@ -42,12 +42,19 @@ export function RsvpForm({
   hasResponded,
   menu = [],
   selections = {},
+  smsEnabled = false,
 }: {
   party: ResolvedParty
   token: string
   hasResponded: boolean
   menu?: MenuCourse[]
   selections?: Record<number, MealSelection[]>
+  /**
+   * Whether this wedding sends texts. When it does not, no phone number is asked for at
+   * all — collecting one we will never use is exactly what data minimisation forbids
+   * (docs/SECURITY.md §7).
+   */
+  smsEnabled?: boolean
 }) {
   const router = useRouter()
   const [answers, setAnswers] = useState<Record<number, GuestAnswer>>(() =>
@@ -55,6 +62,8 @@ export function RsvpForm({
   )
   const [message, setMessage] = useState(party.messageToCouple ?? '')
   const [email, setEmail] = useState(party.contactEmail ?? '')
+  const [phone, setPhone] = useState(party.contactPhone ?? '')
+  const [smsConsent, setSmsConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -94,6 +103,8 @@ export function RsvpForm({
         token,
         messageToCouple: message,
         contactEmail: email,
+        contactPhone: smsEnabled ? phone : '',
+        smsConsent: smsEnabled && smsConsent && phone.trim().length > 0,
         guests: responses.map(({ guest, answer }) => ({
           guestId: guest.id,
           rsvpStatus: answer!.rsvpStatus,
@@ -266,6 +277,36 @@ export function RsvpForm({
           value={email}
           onChange={setEmail}
         />
+        {smsEnabled ? (
+          <>
+            <Field
+              id="contact-phone"
+              label="Mobile number (optional)"
+              type="tel"
+              value={phone}
+              onChange={setPhone}
+            />
+            <div className="flex items-start gap-3">
+              <input
+                id="sms-consent"
+                type="checkbox"
+                checked={smsConsent}
+                onChange={(event) => setSmsConsent(event.target.checked)}
+                aria-describedby="sms-consent-help"
+                className="mt-1"
+              />
+              <div className="text-sm">
+                <label htmlFor="sms-consent">
+                  Text this number on the day when our photograph is coming up
+                </label>
+                <p id="sms-consent-help" className="mt-0.5 text-guest-muted">
+                  Only for the wedding day itself. Leave it unticked and we will not text you.
+                </p>
+              </div>
+            </div>
+          </>
+        ) : null}
+
         <Field
           id="message"
           label="A message for the couple (optional)"

@@ -52,6 +52,11 @@ export const rsvpSubmissionSchema = z.object({
     .nullable()
     .optional(),
   contactPhone: freeText(40),
+  /**
+   * Opt-in for wedding-day texts. Meaningless without a number, and ignored entirely
+   * when the wedding has SMS switched off — the server decides that, not the form.
+   */
+  smsConsent: z.boolean().optional().default(false),
 })
 
 export type GuestResponseInput = z.infer<typeof guestResponseSchema>

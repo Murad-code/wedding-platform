@@ -79,6 +79,7 @@ export interface Config {
     'itinerary-items': ItineraryItem;
     'wedding-contacts': WeddingContact;
     media: Media;
+    notifications: Notification;
     'audit-events': AuditEvent;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -99,6 +100,7 @@ export interface Config {
     'itinerary-items': ItineraryItemsSelect<false> | ItineraryItemsSelect<true>;
     'wedding-contacts': WeddingContactsSelect<false> | WeddingContactsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -243,6 +245,14 @@ export interface Guest {
   isPlusOne?: boolean | null;
   email?: string | null;
   phone?: string | null;
+  /**
+   * Has this guest agreed to receive text messages? Required before any SMS is sent — a phone number on its own is not permission.
+   */
+  smsConsent?: boolean | null;
+  /**
+   * Recorded automatically when consent is given, so it can be evidenced later.
+   */
+  smsConsentAt?: string | null;
   dietaryRequirements?: string | null;
   /**
    * Surfaced prominently to organisers and in the caterer export.
@@ -452,6 +462,48 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Delivery record for email and SMS. Written by the app, never by hand.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  guest: number | Guest;
+  /**
+   * Makes a repeat send impossible. The uniqueness is enforced by the database, not by a check in code.
+   */
+  dedupeKey: string;
+  channel: 'email' | 'sms';
+  type: 'photo.get-ready' | 'photo.now';
+  /**
+   * Which service actually delivered it, e.g. resend, twilio, console.
+   */
+  provider?: string | null;
+  status: 'queued' | 'sending' | 'sent' | 'failed';
+  /**
+   * Empty for SMS, which has no subject line.
+   */
+  subject?: string | null;
+  /**
+   * The message as it was sent. Rendered when the message is queued so the dispatcher never has to know what a photo group is.
+   */
+  body: string;
+  providerMessageId?: string | null;
+  attempts: number;
+  lastAttemptAt?: string | null;
+  /**
+   * When the dispatcher will try again. Empty means it will not.
+   */
+  nextAttemptAt?: string | null;
+  /**
+   * The provider’s reason for the last failure.
+   */
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Append-only activity log.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -562,6 +614,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'notifications';
+        value: number | Notification;
+      } | null)
+    | ({
         relationTo: 'audit-events';
         value: number | AuditEvent;
       } | null);
@@ -663,6 +719,8 @@ export interface GuestsSelect<T extends boolean = true> {
   isPlusOne?: T;
   email?: T;
   phone?: T;
+  smsConsent?: T;
+  smsConsentAt?: T;
   dietaryRequirements?: T;
   allergies?: T;
   accessibilityNeeds?: T;
@@ -795,6 +853,27 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  guest?: T;
+  dedupeKey?: T;
+  channel?: T;
+  type?: T;
+  provider?: T;
+  status?: T;
+  subject?: T;
+  body?: T;
+  providerMessageId?: T;
+  attempts?: T;
+  lastAttemptAt?: T;
+  nextAttemptAt?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

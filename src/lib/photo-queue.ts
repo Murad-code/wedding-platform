@@ -12,9 +12,12 @@ import {
   type QueueAction,
   type QueueSnapshot,
 } from '@/domain/photo-queue/queue'
+import type { NotificationType } from '@/domain/notifications/notification'
 import type { PhotoGroup as PhotoGroupDoc } from '@/payload-types'
 
+import { enqueue, recipientsFor } from './notifications/dispatch'
 import { photoQueueTransport } from './realtime'
+import { getWeddingSettings } from './wedding'
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
@@ -101,8 +104,18 @@ export async function groupIdsForGuests(guestIds: readonly number[]): Promise<nu
   return result.docs.map((doc) => doc.id)
 }
 
+/** What happened when the guests in the affected groups were told. */
+export type AlertSummary = {
+  queued: number
+  /** Already told about this photograph — an organiser stepping back does not re-send. */
+  duplicate: number
+  /** No email, or a phone number without consent. The organiser has to find them. */
+  unreachable: number
+}
+
 export type QueueActionResult =
-  { ok: true; snapshot: QueueSnapshot } | { ok: false; reason: 'stale'; snapshot: QueueSnapshot }
+  | { ok: true; snapshot: QueueSnapshot; alerts: AlertSummary }
+  | { ok: false; reason: 'stale'; snapshot: QueueSnapshot }
 
 /**
  * Applies one of the controller's buttons and tells every connected phone.
@@ -119,6 +132,7 @@ export async function runQueueAction(
   const payload = await getPayload({ config })
   const transactionID = await payload.db.beginTransaction()
   const req = transactionID === null ? undefined : { transactionID }
+  let committed = false
 
   try {
     const state = await payload.findGlobal({
@@ -176,9 +190,19 @@ export async function runQueueAction(
     const snapshot: QueueSnapshot = { revision: next, groups: after.map(toPublicGroup) }
     publish(snapshot)
 
-    return { ok: true, snapshot }
+    committed = true
+
+    // Queued after the commit, and deliberately outside the try: an alerting failure must
+    // not roll back a transaction that has already been committed, and must not undo a
+    // queue advance that genuinely happened. The counts come back now because "three
+    // guests could not be reached" is something to act on immediately.
+    const alerts = await alertAffectedGuests(before, after)
+
+    return { ok: true, snapshot, alerts }
   } catch (error) {
-    if (transactionID !== null) await payload.db.rollbackTransaction(transactionID)
+    if (transactionID !== null && !committed) {
+      await payload.db.rollbackTransaction(transactionID)
+    }
     throw error
   }
 }
@@ -241,4 +265,69 @@ export async function getPhotographableGuests(): Promise<PhotographableGuest[]> 
         guest.party && typeof guest.party === 'object' ? (guest.party.displayName ?? '') : '',
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
+}
+
+/**
+ * Tells the guests in any group that has just been called, or is now next.
+ *
+ * Driven by the *transition*, not the resulting state, so re-running an action or
+ * stepping back and forth does not produce a second round of messages — and the unique
+ * dedupe key catches anything that slips through anyway (ADR-023).
+ */
+async function alertAffectedGuests(
+  before: readonly PhotoGroup[],
+  after: readonly PhotoGroup[],
+): Promise<AlertSummary> {
+  try {
+    return await queueAlerts(before, after)
+  } catch (error) {
+    // The photograph has been called and every phone already knows. Failing the
+    // organiser's press because a message could not be queued would be the wrong trade:
+    // the queue is the product, the message is the courtesy.
+    console.error('Photo queue: could not queue alerts', {
+      message: error instanceof Error ? error.message : 'unknown error',
+    })
+    return { queued: 0, duplicate: 0, unreachable: 0 }
+  }
+}
+
+async function queueAlerts(
+  before: readonly PhotoGroup[],
+  after: readonly PhotoGroup[],
+): Promise<AlertSummary> {
+  const summary: AlertSummary = { queued: 0, duplicate: 0, unreachable: 0 }
+
+  const transitions: { group: PhotoGroup; type: NotificationType }[] = []
+
+  for (const group of after) {
+    const previous = before.find((candidate) => candidate.id === group.id)
+    if (!previous || previous.status === group.status) continue
+
+    if (group.status === 'now') transitions.push({ group, type: 'photo.now' })
+    else if (group.status === 'get_ready') transitions.push({ group, type: 'photo.get-ready' })
+  }
+
+  if (transitions.length === 0) return summary
+
+  const settings = await getWeddingSettings()
+
+  for (const { group, type } of transitions) {
+    const recipients = await recipientsFor(group.memberIds)
+
+    for (const recipient of recipients) {
+      const result = await enqueue({
+        type,
+        subjectId: group.id,
+        recipient,
+        context: { groupName: group.name, coupleNames: settings.coupleNames },
+        smsEnabled: settings.features.smsNotifications,
+      })
+
+      if (result.queued) summary.queued += 1
+      else if (result.reason === 'duplicate') summary.duplicate += 1
+      else summary.unreachable += 1
+    }
+  }
+
+  return summary
 }

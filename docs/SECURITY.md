@@ -23,7 +23,7 @@ credentials → wedding content → media.
 | T9  | SQL injection                               | Anyone                 | Parameterised queries via Drizzle; no string-built SQL                                |
 | T10 | CSRF on organiser mutations                 | Anyone                 | `SameSite=Lax` cookies + Payload CSRF allowlist + no state-changing GETs              |
 | T11 | Malicious file upload                       | Organiser account      | MIME + extension + size validation; images re-processed; no execution from media      |
-| T12 | SMS/email abuse (cost, spam)                | Compromised account    | Per-guest dedupe key, send caps, consent flag required                                |
+| T12 | SMS/email abuse (cost, spam)                | Compromised account    | Unique dedupe key per guest and message, organiser-only dispatch, consent required    |
 | T13 | Secrets in the repository                   | Accident               | `.env` git-ignored, `.env.example` only, secret scanning in CI                        |
 | T14 | Backup exposure                             | Infrastructure         | Encrypted backups, restricted access, isolated per client                             |
 | T15 | Guest list harvesting via the live queue    | Anyone                 | The stream carries group names only; membership is resolved server-side (ADR-021)     |
@@ -93,6 +93,7 @@ outage during the event. The limits below are shaped around that.
 | `POST /api/rsvp`                             | per IP                 | 300 / min    | Ceiling against scripted flooding, sized so a coach party replying at once is unaffected.                  |
 | Organiser login                              | per IP and per account | with backoff | Credentials are low-entropy; this one genuinely is per-IP.                                                 |
 | CSV import/export                            | per authenticated user | —            |                                                                                                            |
+| `POST /api/notifications/dispatch`           | organiser session      | —            | Sending costs money and reaches real people, so it is authorised as a mutation, not a read.                |
 | `GET /api/photo-queue/stream`                | global subscriber cap  | 500 open     | Per-IP would shut out a whole venue on one wifi; those refused fall back to polling (ADR-022).             |
 | `GET /photos/:token` — **failed** lookup     | per IP                 | 20 / min     | Same enumeration signal, same limiter, as the invitation page.                                             |
 
@@ -133,10 +134,21 @@ guest, plus-one allowance, children's-menu eligibility, and table capacity warni
 - **Purpose limitation:** guest data is used for this wedding only, never shared between
   client deployments. Isolation is architectural (ADR-001), not procedural.
 - **Lawful basis:** legitimate interest for invitation and catering; **explicit opt-in
-  consent** for SMS, recorded with a timestamp.
+  consent** for SMS, recorded with a timestamp on the guest and cleared when withdrawn.
+  Consent is checked in one place (`chooseChannel`) before a provider is ever reached, and
+  is never inherited from the party — a household contact number does not make everyone in
+  that household textable. Consent posted to a wedding with SMS switched off is discarded
+  rather than stored, because the client does not get to decide that.
+- **Minimisation in the RSVP:** the guest form asks for a phone number **only** when the
+  wedding has SMS enabled. A number the platform will never use is not collected.
 - **Access & portability:** organisers can export guest data as CSV/JSON.
-- **Erasure:** deleting a guest removes the record and their meal selections; audit events
-  retain the action but not the PII payload.
+- **Erasure:** deleting a guest removes the record, their meal selections, their photo
+  group membership, and their notifications — the delivery record stores the rendered
+  message, which contains their name. Audit events retain the action but not the PII
+  payload.
+- **Delivery records hold no addresses.** The email or phone used is read from the guest at
+  send time and never copied into the notification row, so contact details live in one
+  place and are erased in one place.
 - **Retention:** guest PII should be deleted after the wedding. The platform ships a
   documented purge procedure and a post-wedding reminder; it does not delete data
   automatically, because that is the couple's decision to make.

@@ -305,17 +305,67 @@ against the running server as well as by test.
 
 ---
 
-## Phase 8 — Notifications
+## Phase 8 — Notifications ✅
 
-- [ ] `NotificationProvider` interface
-- [ ] Console provider (dev/CI, no network, no cost)
-- [ ] Resend email provider
-- [ ] Twilio SMS provider
-- [ ] `Notifications` collection with `UNIQUE dedupeKey`
-- [ ] Async dispatch queue + retry with backoff
-- [ ] Photo-queue alerts ("you're next", "make your way over")
-- [ ] SMS consent flag enforced before send
-- [ ] Tests: dedupe under concurrency, retry, failure recording
+- [x] `NotificationProvider` interface in `src/domain/notifications/`
+- [x] Console provider (dev/CI, no network, no cost) — selected automatically whenever a
+      real provider is not fully configured, so a half-configured deployment logs rather
+      than throws mid-wedding
+- [x] Resend email provider, plain `fetch`, with retryable/permanent classification
+- [x] Twilio SMS provider, reporting Twilio's own error code rather than the status
+- [x] `Notifications` collection with `UNIQUE dedupeKey`, closed to all writes but the app
+- [x] Async dispatch: `after()` for the first pass, an in-process timer for retries, and
+      an organiser-only `POST /api/notifications/dispatch` to force one (ADR-025)
+- [x] Retry with backoff, plus a per-type expiry — a late wedding-day alert is a wrong
+      instruction, not a late success (ADR-024)
+- [x] Photo-queue alerts driven by the _transition_, so stepping back does not re-send
+- [x] SMS consent: a per-guest field with a timestamp, captured on the RSVP (only when
+      the wedding sends texts) and on the organiser's guest form, enforced in one place
+      before any provider is reached
+- [x] `/dashboard/notifications` — what was sent, what failed, and a manual retry
+- [x] Tests: dedupe under three concurrent callers, eligibility, retry classification,
+      expiry, erasure, and consent that the client cannot grant itself
+
+**Decisions taken here:** ADR-023 (deduplication is a unique index), ADR-024 (messages
+expire rather than retrying patiently), ADR-025 (`after()` plus an in-process timer rather
+than a job runner).
+
+**Deliberately not built:** invitation and RSVP-reminder emails. The phase's requirement
+is the wedding-day alerts; `NOTIFICATION_TYPES` is a closed list precisely so adding a
+message stays a product decision rather than a string literal at a call site.
+
+**Found while building:**
+
+- **A bug that only existed in a production build.** Duplicate detection matched Payload's
+  error by class name (`name === 'ValidationError'`). A production build minifies that
+  class to a single letter, so every unit and integration test passed while the real
+  application rethrew, the server action never returned, and the controller's _Previous_
+  button hung with no feedback at all. It now matches on the error's shape. This is the
+  clearest vindication yet of ADR-012 — running E2E against the production artifact is the
+  only reason it was caught.
+- **An alerting failure could roll back a committed transaction.** The alert step sat
+  inside the same `try` as the queue write, so any error there called
+  `rollbackTransaction` on a transaction that had already committed. Alerting now happens
+  after the transaction has settled, and a failure there is logged rather than failing the
+  organiser's press: the queue is the product, the message is the courtesy.
+- **Pressing a controller button twice in quick succession could lose the second press.**
+  React re-renders the subtree on each press, and a click dispatched during that render
+  lands on a node being replaced. The controller now exposes `data-pending`, so tests wait
+  for the press to settle rather than guessing — the same fix as the seating planner's
+  "Saving…" indicator.
+
+- Two E2E tests read the notification record straight after clicking a controller button.
+  `click()` returns when the click is dispatched, not when the server action finishes, so
+  both were racing the server. One failed; the other passed by luck and has been fixed too.
+- The first version of `enqueue` treated _any_ insert failure as a duplicate, which would
+  have made a database outage look like "already sent". It now recognises the unique
+  violation specifically and rethrows everything else.
+
+**Phase 8 verification (2026-08-30):** `pnpm verify` passes; 380 unit and integration
+tests, and 210 Playwright tests green on two consecutive full runs with 24 deliberate
+skips. The integration suite is
+the first to use `tests/int/`, because a `UNIQUE` constraint under concurrency cannot be
+proved anywhere else.
 
 ---
 

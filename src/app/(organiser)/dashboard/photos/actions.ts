@@ -2,13 +2,21 @@
 
 import config from '@payload-config'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { getPayload } from 'payload'
 import { z } from 'zod'
 
 import { isQueueAction, reorder, type QueueSnapshot } from '@/domain/photo-queue/queue'
 import { recordAuditEvent } from '@/lib/audit'
 import { requireMutator } from '@/lib/auth/session'
-import { getPhotoGroups, getSnapshot, notifyQueueChanged, runQueueAction } from '@/lib/photo-queue'
+import { dispatchSoon } from '@/lib/notifications/scheduler'
+import {
+  getPhotoGroups,
+  getSnapshot,
+  notifyQueueChanged,
+  runQueueAction,
+  type AlertSummary,
+} from '@/lib/photo-queue'
 
 export type PhotoGroupState = { error?: string; ok?: boolean; message?: string }
 
@@ -193,7 +201,8 @@ export async function removeGroupMember(
 }
 
 export type ControllerResult =
-  { ok: true; snapshot: QueueSnapshot } | { ok: false; error: string; snapshot: QueueSnapshot }
+  | { ok: true; snapshot: QueueSnapshot; alerts: AlertSummary }
+  | { ok: false; error: string; snapshot: QueueSnapshot }
 
 /**
  * The wedding-day controller's four buttons.
@@ -235,6 +244,10 @@ export async function performQueueAction(
     entityId: String(result.snapshot.revision),
   })
 
+  // Delivery happens once this response has already gone out. Pressing Call next must
+  // never wait on Twilio (docs/ARCHITECTURE.md §6).
+  after(dispatchSoon)
+
   revalidate()
-  return { ok: true, snapshot: result.snapshot }
+  return { ok: true, snapshot: result.snapshot, alerts: result.alerts }
 }

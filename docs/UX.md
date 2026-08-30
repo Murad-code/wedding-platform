@@ -43,6 +43,7 @@ ORGANISER (authenticated)
   /dashboard/itinerary      Timeline editor
   /dashboard/photos         Photo groups
   /dashboard/photos/run     Wedding-day controller
+  /dashboard/notifications  Messages sent to guests, and what failed
   /dashboard/website        Content and section visibility
   /dashboard/settings       Wedding settings
   /dashboard/team           Organiser users                       [admin only]

@@ -40,6 +40,7 @@ export default async function DashboardPage() {
             ...(settings.features.photoQueue
               ? [{ href: '/dashboard/photos', label: 'Photographs' }]
               : []),
+            { href: '/dashboard/notifications', label: 'Messages' },
             { href: '/dashboard/contacts', label: 'Contacts' },
             { href: '/dashboard/settings', label: 'Wedding settings' },
           ].map((item) => (

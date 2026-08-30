@@ -141,10 +141,18 @@ wifi is the expected condition, not the exception.
 
 ## 6. Notifications
 
-Interactive requests never block on Resend or Twilio. Organiser actions enqueue work; a
-Payload job/worker performs delivery with retry and backoff. Deduplication is a **unique
-`dedupeKey` in Postgres**, so two concurrent workers cannot double-send — the second
-insert simply fails.
+Interactive requests never block on Resend or Twilio. An organiser action writes one row
+per message and returns; delivery runs in `after()`, once the response has already gone
+out. Anything still queued is picked up by a single in-process timer, and
+`POST /api/notifications/dispatch` forces a pass by hand or from an external scheduler
+(ADR-025).
+
+Deduplication is a **unique `dedupeKey` in Postgres**, so two concurrent dispatchers
+cannot double-send — the second insert simply fails (ADR-023).
+
+Retries are deliberately impatient: four attempts across about twenty seconds, and every
+message carries a maximum age after which it is abandoned. A wedding-day alert delivered
+late is a wrong instruction rather than a late success (ADR-024).
 
 `NotificationProvider` has a console implementation used in development and CI, so tests
 never make network calls or incur cost.
