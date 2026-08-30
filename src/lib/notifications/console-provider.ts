@@ -4,6 +4,8 @@ import type {
   OutboundMessage,
 } from '@/domain/notifications/notification'
 
+import { logger } from '../logger'
+
 /**
  * Writes messages to the server log instead of sending them.
  *
@@ -16,15 +18,11 @@ export function createConsoleProvider(channel: NotificationChannel): Notificatio
     name: 'console',
     channel,
     send(message: OutboundMessage) {
-      // The rule exists to keep stray debugging out of production. Writing to the
-      // console is this provider's entire purpose, and it is only ever selected when no
-      // real provider is configured.
-      // eslint-disable-next-line no-console
-      console.info('[notification]', {
+      logger.info('Notification (console provider)', {
         channel: message.channel,
-        // Masked even here. A development log is still a log, and it is the habit that
-        // matters (docs/SECURITY.md §7).
-        to: mask(message.to),
+        // Masked before it reaches the logger, which would otherwise redact the address
+        // outright and leave a developer unable to tell two recipients apart.
+        recipient: mask(message.to),
         subject: message.subject,
         body: message.body,
       })

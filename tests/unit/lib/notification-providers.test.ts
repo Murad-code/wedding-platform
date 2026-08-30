@@ -27,30 +27,34 @@ afterEach(() => {
 })
 
 describe('console provider', () => {
+  /** The provider logs through the structured logger, which writes JSON to stdout. */
+  const captureLog = () => vi.spyOn(console, 'log').mockImplementation(() => {})
+  const logged = (spy: ReturnType<typeof captureLog>) => String(spy.mock.calls[0]?.[0])
+
   it('always succeeds, so development and CI never depend on a network', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const log = captureLog()
     const outcome = await createConsoleProvider('email').send(message)
 
     expect(outcome.ok).toBe(true)
-    expect(info).toHaveBeenCalledOnce()
+    expect(log).toHaveBeenCalledOnce()
   })
 
   it('masks the recipient even in a development log', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const log = captureLog()
     await createConsoleProvider('email').send(message)
 
-    const logged = JSON.stringify(info.mock.calls[0]?.[1])
-    expect(logged).not.toContain('ada@example.test')
-    expect(logged).toContain('a***@example.test')
+    expect(logged(log)).not.toContain('ada@example.test')
+    // Masked rather than redacted outright, so a developer can still tell two
+    // recipients apart.
+    expect(logged(log)).toContain('a***@example.test')
   })
 
   it('masks a phone number down to its last digits', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const log = captureLog()
     await createConsoleProvider('sms').send({ ...message, channel: 'sms', to: '+447700900123' })
 
-    const logged = JSON.stringify(info.mock.calls[0]?.[1])
-    expect(logged).not.toContain('+447700900123')
-    expect(logged).toContain('***0123')
+    expect(logged(log)).not.toContain('+447700900123')
+    expect(logged(log)).toContain('***0123')
   })
 })
 

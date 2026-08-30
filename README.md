@@ -39,6 +39,15 @@ be running on 5432.
 | `pnpm payload migrate`        | Run migrations                                 |
 | `pnpm generate:types`         | Regenerate Payload types after a schema change |
 | `pnpm seed`                   | Load deterministic development data            |
+| `pnpm smoke <url>`            | Deployment smoke tests against a running site  |
+| `pnpm backup [dir]`           | Back up a wedding's database                   |
+| `pnpm backup:verify <dump>`   | Restore a backup into a scratch database       |
+
+## Deploying a wedding
+
+`deploy/` holds the production Compose project, Caddyfile, and environment template.
+`docs/CLIENT_DEPLOYMENT.md` is the step-by-step guide and records what has and has not
+been verified.
 
 ## Stack
 

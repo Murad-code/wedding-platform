@@ -44,3 +44,4 @@ pnpm-debug.log*
 # misc
 .turbo/
 *.tsbuildinfo
+deploy/.env

@@ -1,3 +1,5 @@
+import { reportError } from '../error-reporting'
+
 import { dispatchDue } from './dispatch'
 
 /**
@@ -36,9 +38,7 @@ export async function dispatchSoon(): Promise<void> {
   } catch (error) {
     // A failed dispatch pass must never surface as a failed organiser action; the
     // messages stay queued and the next pass picks them up.
-    console.error('Notification dispatch failed', {
-      message: error instanceof Error ? error.message : 'unknown error',
-    })
+    reportError(error, { operation: 'notifications.dispatch' })
   }
 }
 

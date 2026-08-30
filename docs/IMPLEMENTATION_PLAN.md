@@ -42,9 +42,9 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
 ### 0.3 Developer environment
 
 - [x] `docker-compose.yml` for Postgres (dev, port 5433 to avoid collisions)
-- [~] Migration commands — `pnpm payload migrate` is wired and development uses Payload's
-  `push`. No migration is committed yet; the first is generated before the first real
-  deployment (Phase 9), which is also when the migrate-on-deploy step gets exercised
+- [x] Migration commands — development uses Payload's `push`; production does not. The
+      initial migration is committed (Phase 9) and was exercised by the deployment dry run,
+      creating all 27 tables in a fresh database
 - [x] `/api/health` endpoint (app + database readiness)
 - [x] README quickstart — **verified end to end** against a clean `postgres:17-alpine`
       via `pnpm db:up`: empty database → Payload created all 17 tables → `/api/health`
@@ -330,6 +330,10 @@ against the running server as well as by test.
 expire rather than retrying patiently), ADR-025 (`after()` plus an in-process timer rather
 than a job runner).
 
+**SMS vendors going forward:** keep the console provider for development and CI; Twilio
+remains the production default. Textbee is not the development backend. Plan and
+rationale: `docs/SMS_PROVIDERS.md`.
+
 **Deliberately not built:** invitation and RSVP-reminder emails. The phase's requirement
 is the wedding-day alerts; `NOTIFICATION_TYPES` is a closed list precisely so adding a
 message stays a product decision rather than a string literal at a call site.
@@ -369,17 +373,64 @@ proved anywhere else.
 
 ---
 
-## Phase 9 — Production readiness
+## Phase 9 — Production readiness ✅
 
-- [ ] Production Dockerfile (multi-stage, non-root, standalone output)
-- [ ] Production `docker-compose.yml` + Caddyfile
-- [ ] Structured logging + token/PII redaction (tested)
-- [ ] Error reporting wrapper (Sentry-ready)
-- [ ] Backup + verified restore procedure
-- [ ] Full security review pass
-- [ ] Deployment smoke tests
-- [ ] CI/CD pipeline
-- [ ] `docs/CLIENT_DEPLOYMENT.md` validated by an actual dry run
+- [x] Production Dockerfile — multi-stage, non-root (uid 1001), Next standalone output.
+      Built and run: 406 MB, connects to Postgres, serves the guest site
+- [x] `deploy/docker-compose.yml` + `deploy/Caddyfile` + `deploy/.env.example`. Only
+      Caddy publishes ports, so TLS cannot be bypassed and one wedding's database is not
+      addressable from another's project
+- [x] Structured logging: one JSON line per event, one module permitted to write to the
+      console, redaction applied to the context **and** the message (ADR-026)
+- [x] Error reporting seam with nothing behind it by default (ADR-027)
+- [x] Backup and **verified** restore — `scripts/backup.sh`, `scripts/verify-restore.sh`
+- [x] Security review pass (findings below)
+- [x] Deployment smoke tests — `scripts/smoke.sh`, 18 checks, run against the real
+      container
+- [x] CI builds the production image and asserts it starts as a non-root user
+- [x] `docs/CLIENT_DEPLOYMENT.md` validated by an actual dry run
+- [x] Initial migration generated — without one, a production deployment came up with an
+      empty schema, because `push` is disabled outside development
+
+**Decisions taken here:** ADR-026 (single logging writer with redaction), ADR-027 (no
+error tracker by default), ADR-028 (separate migrator image), ADR-029 (partial CSP,
+honestly labelled).
+
+**Security review findings, all fixed:**
+
+- **`/photos/:token` was missing the invitation-URL headers.** Phase 7 added a second
+  route with a token in the path and did not extend the `no-referrer` / `noindex` /
+  `no-store` rules to it, so a guest's token could have leaked in a referrer. An E2E spec
+  now asserts the headers on every surface that has them.
+- **SVG uploads bypassed the upload mitigation.** T11 relies on sharp re-processing
+  images, but sharp does not rasterise SVG, so an SVG was stored exactly as submitted — a
+  script-capable document served from the wedding's own origin. Raster types only now,
+  with a sandboxed CSP on media responses as defence in depth.
+- **`/api/health` reported a schema-less deployment as healthy.** Found by the dry run:
+  the app connects, `SELECT 1` succeeds, every page 500s, and the uptime monitor stays
+  green. It now checks readiness rather than reachability.
+- **The documented migration command could not work.** The standalone runtime image has
+  five packages and no `node_modules/.bin`, so there was no Payload CLI to run
+  (ADR-028). Found by building the image and looking, not by reasoning about it.
+- Added a baseline CSP (ADR-029) and `noindex` on `/admin`.
+
+**Dry run, 2026-08-30.** Fresh Compose project, empty database → app up but **unhealthy**
+(`schema: error`, HTTP 503) and the guest site 500 → migration created 27 tables →
+healthy, guest site 200 → bootstrap organiser created, and a duplicate correctly refused →
+all 18 smoke checks pass → backup taken and restored into a scratch database with matching
+exact row counts → project torn down with its volumes.
+
+**Not verified, and not claimed:**
+
+- Caddy and TLS. The Caddyfile is written and reviewed but needs a real domain and a
+  public host to exercise; `flush_interval -1` for SSE in particular is reasoned, not
+  observed.
+- CI has still never executed. There is no git remote, so every workflow in
+  `.github/workflows/ci.yml` — including the new image job — is unrun.
+- S3/R2 media storage. The default deployment uses a local volume.
+
+**Phase 9 verification (2026-08-30):** `pnpm verify` passes; 415 unit and integration
+tests, 220 Playwright tests with 24 deliberate skips.
 
 ---
 
@@ -394,6 +445,10 @@ proved anywhere else.
 - [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
       indefinitely, which makes a dev database noisy over time (harmless, but untidy)
 - [ ] Keep this file, ADRs, and docs current as work lands
+- [ ] **Complete the Content-Security-Policy.** `script-src` and `style-src` are unset
+      (ADR-029). Doing it properly means a per-request nonce threaded through `proxy.ts`
+      and both root layouts, plus an audit of Payload's admin bundle
+- [ ] Media on S3/R2 rather than a local volume, per `docs/CLIENT_DEPLOYMENT.md` §4
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
 `ON DELETE SET NULL` foreign key. Deleting a party through the app is safe — a hook

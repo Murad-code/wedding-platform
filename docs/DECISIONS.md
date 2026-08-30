@@ -521,3 +521,89 @@ to worthless anyway.
 external scheduler can recover. If notifications ever become something a couple depends on
 outside the wedding day — invitations, reminders — this decision should be revisited
 before that work starts, not after.
+
+---
+
+## ADR-026 — One module writes to the console, and it redacts
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** `docs/SECURITY.md` §7 forbids logging tokens, secrets, and unnecessary guest
+PII. Until now that was a rule each call site had to remember, and several of them were
+hand-rolling `error instanceof Error ? error.message : 'unknown error'`.
+
+**Decision.** All logging goes through `src/lib/logger.ts`, which redacts the context
+object _and the message_ before writing one JSON object per line. Nothing else in the
+application calls `console`.
+
+**Rationale.** A rule that depends on everyone remembering it is not a control. Redaction
+is applied by key (`password`, `email`, `dietary`, …) and by value, because the dangerous
+things rarely arrive as a tidy field — a token turns up inside a URL inside an error
+message. Redacting the message as well as the context was not the original design; it was
+added because a test caught `reportError` logging `error.message` straight through.
+
+**Consequence.** Redaction errs towards removing too much: an over-redacted line is an
+inconvenience, a token in a log file is an incident. The one place that bit back was
+stack traces, where a versioned package path looked like an email address, so the email
+pattern requires letters after the final dot.
+
+---
+
+## ADR-027 — There is no error tracker, only a seam for one
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** Production readiness usually means wiring Sentry.
+
+**Decision.** `reportError` always logs locally and forwards to a reporter that a
+deployment may register at startup. Nothing is registered by default, and no SDK is a
+dependency.
+
+**Rationale.** An error tracker receives stack traces, request context, and whatever was
+in scope — for this application, fragments of a real guest list, sent to a third party.
+That makes it a sub-processor in the couple's privacy notice (`docs/SECURITY.md` §7), and
+a decision for them rather than a default this repository picks on their behalf. A
+registered reporter receives the raw error and is responsible for its own scrubbing, which
+is precisely why the default is nothing.
+
+---
+
+## ADR-028 — The runtime image has no CLI; migrations run from a second target
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** `docs/CLIENT_DEPLOYMENT.md` §7 documented
+`docker compose run --rm app pnpm payload migrate`. That command cannot work: Next's
+standalone output traces only what the server imports, so the runtime image has five
+packages in `node_modules` and no `.bin` at all.
+
+**Decision.** The same Dockerfile has a `migrator` target that keeps the full dependency
+tree and exists to run once per deploy and exit. Compose exposes it behind a `tools`
+profile so it is never started as a service.
+
+**Rationale.** Keeping the full `node_modules` in the runtime image to make one command
+work would triple its size and put a package manager and every dev dependency on the
+production host. A second image costs build time and nothing at runtime.
+
+**Consequence.** Found by building the image and reading its `node_modules`, not by
+reasoning about it — the documented command had been wrong since it was written.
+
+---
+
+## ADR-029 — A partial Content-Security-Policy, honestly labelled
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** A CSP is standard hardening, but a _useful_ `script-src` needs a per-request
+nonce threaded through the proxy and both root layouts, and Payload's admin bundle would
+need auditing alongside it.
+
+**Decision.** Ship `base-uri`, `form-action`, `frame-ancestors`, and `object-src` now.
+Leave `script-src` and `style-src` unset, and record the gap.
+
+**Rationale.** The four directives shipped are the ones that can be set without breaking
+anything, and each stops a real attack: a `<base>` tag rewriting every relative URL, an
+injected form posting an RSVP somewhere else, framing, and plugin embedding. Setting
+`script-src` loosely — with `unsafe-inline`, which is what makes it "just work" — would be
+worse than not setting it: it would look like a policy in an audit while permitting
+exactly the injection a policy exists to stop.

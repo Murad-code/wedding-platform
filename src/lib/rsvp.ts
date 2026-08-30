@@ -6,6 +6,7 @@ import { validateSelections, type MenuCourse } from '@/domain/menu/menu'
 import { derivePartyStatus, isRsvpStatus, type RsvpStatus } from '@/domain/rsvp/status'
 import { replaceSelections } from '@/lib/menu'
 import { recordAuditEvent } from '@/lib/audit'
+import { reportError } from '@/lib/error-reporting'
 import type { ResolvedParty } from '@/lib/invitations'
 
 export type RsvpResult =
@@ -152,10 +153,7 @@ export async function submitRsvp({
   } catch (error) {
     await payload.db.rollbackTransaction(transactionID)
     // Never log the submission body — it contains guest PII and health data.
-    console.error('RSVP submission failed', {
-      partyId: party.id,
-      message: error instanceof Error ? error.message : 'unknown error',
-    })
+    reportError(error, { operation: 'rsvp.submit', partyId: party.id })
     return { ok: false, reason: 'failed' }
   }
 }

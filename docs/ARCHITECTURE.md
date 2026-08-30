@@ -191,13 +191,31 @@ fast feedback.
 ## 9. Deployment model
 
 Each wedding is an independent Docker Compose project with its own database, volumes,
-secrets, and domain. Several may share a VPS; none share state. Migrations run as an
-explicit step on deploy, never automatically at container start. See
+secrets, and domain. Several may share a VPS; none share state. See
 `docs/CLIENT_DEPLOYMENT.md`.
+
+The image is multi-stage and ships Next's standalone output: the runtime layer contains
+the built application, five runtime packages, and no package manager, and it runs as an
+unprivileged user. That is also why the Payload CLI is not in it — migrations run from a
+second target built from the same Dockerfile, once per deploy, and exit (ADR-028).
+
+Only Caddy publishes ports. Neither the application nor Postgres does, so TLS cannot be
+bypassed by reaching the origin directly and one wedding's database is not addressable
+from another's project on the same host.
 
 ## 10. Observability
 
-Structured JSON logging with a redaction layer that drops invitation tokens, passwords,
-and unnecessary PII before serialisation. `/api/health` reports application and database
-readiness for Caddy and uptime checks. Error reporting is routed through a thin wrapper so
-Sentry can be added later without touching call sites.
+One JSON object per line, written by exactly one module. Every context object and every
+message passes through a redaction layer first, which strips invitation tokens, contact
+details, and special-category fields whether they arrive as a field, inside a URL, or
+inside an error message (ADR-026). Nothing else in the application writes to the console,
+which is what makes that guarantee hold.
+
+`/api/health` reports **readiness, not connectivity**: it checks that the schema exists as
+well as that the database answers. A deployment whose migrations have not run connects
+perfectly well and then serves 500s on every page, and a bare `SELECT 1` probe would call
+that healthy.
+
+Error reporting goes through `reportError`, which always logs and forwards to an optional
+reporter. Nothing is registered by default: sending a third party fragments of a real
+guest list is the couple's decision and belongs in their privacy notice (ADR-027).

@@ -15,6 +15,7 @@ import {
 import type { NotificationType } from '@/domain/notifications/notification'
 import type { PhotoGroup as PhotoGroupDoc } from '@/payload-types'
 
+import { reportError } from './error-reporting'
 import { enqueue, recipientsFor } from './notifications/dispatch'
 import { photoQueueTransport } from './realtime'
 import { getWeddingSettings } from './wedding'
@@ -284,9 +285,7 @@ async function alertAffectedGuests(
     // The photograph has been called and every phone already knows. Failing the
     // organiser's press because a message could not be queued would be the wrong trade:
     // the queue is the product, the message is the courtesy.
-    console.error('Photo queue: could not queue alerts', {
-      message: error instanceof Error ? error.message : 'unknown error',
-    })
+    reportError(error, { operation: 'photo-queue.alerts' })
     return { queued: 0, duplicate: 0, unreachable: 0 }
   }
 }

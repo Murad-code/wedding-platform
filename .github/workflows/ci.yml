@@ -68,6 +68,50 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  image:
+    # The production artifact is built here because it is the thing that actually ships,
+    # and because it has already caught a bug that only existed in a production build
+    # (see docs/IMPLEMENTATION_PLAN.md, Phase 8).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: false
+          load: true
+          tags: wedding-platform:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check it starts and answers as a non-root user
+        run: |
+          docker run -d --name wp-ci -p 3000:3000 \
+            -e DATABASE_URL=postgres://wedding:wedding@172.17.0.1:5432/wedding \
+            -e PAYLOAD_SECRET=ci-only-secret-not-used-in-any-real-deployment-000 \
+            wedding-platform:ci
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/health && break
+            sleep 2
+          done
+          test "$(docker exec wp-ci id -u)" = "1001"
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: wedding
+          POSTGRES_PASSWORD: wedding
+          POSTGRES_DB: wedding
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U wedding -d wedding"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
   secrets:
     runs-on: ubuntu-latest
     steps:

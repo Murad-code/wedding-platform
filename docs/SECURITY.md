@@ -22,7 +22,7 @@ credentials → wedding content → media.
 | T8  | Stored XSS via rich text or guest free-text | Guest/organiser        | Rich text stored structured (Lexical), never `dangerouslySetInnerHTML` on guest input |
 | T9  | SQL injection                               | Anyone                 | Parameterised queries via Drizzle; no string-built SQL                                |
 | T10 | CSRF on organiser mutations                 | Anyone                 | `SameSite=Lax` cookies + Payload CSRF allowlist + no state-changing GETs              |
-| T11 | Malicious file upload                       | Organiser account      | MIME + extension + size validation; images re-processed; no execution from media      |
+| T11 | Malicious file upload                       | Organiser account      | Raster MIME types only — no SVG; images re-processed by sharp; media served sandboxed |
 | T12 | SMS/email abuse (cost, spam)                | Compromised account    | Unique dedupe key per guest and message, organiser-only dispatch, consent required    |
 | T13 | Secrets in the repository                   | Accident               | `.env` git-ignored, `.env.example` only, secret scanning in CI                        |
 | T14 | Backup exposure                             | Infrastructure         | Encrypted backups, restricted access, isolated per client                             |
@@ -164,12 +164,45 @@ placeholder values. `PAYLOAD_SECRET` must be unique per client deployment — re
 let one wedding's cookies validate against another's. CI scans for secrets and fails the
 build on a hit.
 
+## 8a. Uploads
+
+SVG is **not** an accepted upload type. The mitigation for uploads is that images are
+re-processed by sharp, which strips anything executable — but sharp does not rasterise an
+SVG on the way in, so an SVG would be stored exactly as submitted. It is a document format
+that can carry script, served from the wedding's own origin, and an organiser account is
+all it takes. A monogram can be a PNG.
+
+Media responses additionally carry `Content-Security-Policy: sandbox; default-src 'none'`
+and `X-Content-Type-Options: nosniff`, so a file that somehow got through is inert if a
+browser renders it. That is defence in depth; the accepted-types list is the control.
+
 ## 9. Transport & headers
 
-TLS terminated at Caddy, HSTS enabled. Baseline headers: `Content-Security-Policy` with
-no `unsafe-eval`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-`Referrer-Policy: strict-origin-when-cross-origin` (tightened to `no-referrer` on invite
-routes).
+TLS is terminated at Caddy, which also sets `Strict-Transport-Security` — deliberately
+there rather than in the application, since it is meaningless over plain HTTP and a local
+development server must never send it.
+
+Set by the application on every response: `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and a
+`Content-Security-Policy` of `base-uri 'self'; form-action 'self'; frame-ancestors 'none';
+object-src 'none'`.
+
+**The CSP is deliberately partial.** `script-src` and `style-src` are not set, because
+doing so properly needs a per-request nonce threaded through the proxy and both root
+layouts, and setting them loosely with `unsafe-inline` would look like a policy while
+permitting the injection a policy exists to stop (ADR-029). This is an open item in
+`docs/IMPLEMENTATION_PLAN.md`, not a claim of completeness.
+
+Wherever an invitation token appears in the URL path — `/invite/:token` **and**
+`/photos/:token` — the response is tightened to `Referrer-Policy: no-referrer`,
+`X-Robots-Tag: noindex, nofollow`, and `Cache-Control: private, no-store, max-age=0`. The
+photo-queue route was missed when that feature landed and was caught by the Phase 9
+review; an E2E test now asserts the headers on every one of these surfaces so it cannot
+silently regress again. `/admin` is `noindex` too.
+
+`/api/health` reports readiness rather than reachability: it verifies the schema exists,
+because a deployment whose migrations have not run answers `SELECT 1` perfectly well while
+serving 500s on every page.
 
 ## 10. Audit logging
 
@@ -180,13 +213,26 @@ hashed IP — never the token, never the full changed PII payload.
 
 ## 11. Pre-release checklist
 
-- [ ] No secrets in git history
-- [ ] `PAYLOAD_SECRET` unique and ≥32 bytes
-- [ ] Default/seed organiser credentials removed or rotated
-- [ ] Seed script cannot run against production
-- [ ] Payload Admin restricted to `admin` role
-- [ ] Rate limiting active on invite, RSVP, and login
-- [ ] Security headers verified in production
-- [ ] Token redaction verified in logs
-- [ ] Backups run and a restore has actually been tested
-- [ ] Privacy notice lists all sub-processors
+Items marked ✅ are enforced by a test or a script and do not depend on anyone
+remembering them. The rest are per-deployment and stay manual.
+
+- ✅ Seed script cannot run against production — refuses on `NODE_ENV=production`
+- ✅ Payload Admin restricted to the `admin` role
+- ✅ Rate limiting active on invite, RSVP, and login
+- ✅ Security headers — asserted by `tests/e2e/security-headers.e2e.spec.ts` and by
+  `scripts/smoke.sh` against a running deployment
+- ✅ Token redaction in logs — `tests/unit/domain/redact.test.ts` and
+  `tests/unit/lib/logger.test.ts`
+- ✅ No guest-listing endpoint answers an anonymous request — `scripts/smoke.sh`
+- ✅ No secrets committed — gitleaks runs in CI on every push
+- [ ] `PAYLOAD_SECRET` unique per deployment and ≥32 bytes
+- [ ] Default/bootstrap organiser credentials rotated after handover
+- [ ] Backups run **and a restore has actually been tested** —
+      `scripts/verify-restore.sh`, as part of the nightly job rather than once
+- [ ] Privacy notice lists all sub-processors actually in use
+
+Known and accepted, rather than overlooked:
+
+- The CSP has no `script-src`/`style-src` (ADR-029).
+- Media is served from the application rather than an object store in the default
+  deployment; per-client S3 buckets remain the documented production option.

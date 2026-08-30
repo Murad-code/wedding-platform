@@ -1,0 +1,27 @@
+# TLS, HTTP redirect, and security headers for one wedding.
+# Caddy obtains and renews certificates automatically once the domain resolves here.
+
+{
+	email {$TLS_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		# Only meaningful over HTTPS, which is why it is set here rather than in the
+		# application: a local HTTP development server must never send it.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+		# Caddy announces itself by default; there is no reason to tell anyone what is
+		# running or which version.
+		-Server
+	}
+
+	reverse_proxy app:3000 {
+		# The photo queue is server-sent events. Buffering would hold each event until
+		# the buffer filled, which for a queue that changes every few minutes means the
+		# guest screens would appear frozen for the whole wedding.
+		flush_interval -1
+	}
+}

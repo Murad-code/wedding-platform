@@ -269,3 +269,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   consent.
 - Two photo-queue E2E tests were racing the server — `click()` returns when the click is
   dispatched, not when the server action completes.
+
+### Added (Phase 9 — production readiness)
+
+- Multi-stage production `Dockerfile` shipping Next's standalone output and running as an
+  unprivileged user, plus a `migrator` target carrying the Payload CLI for the deploy-time
+  migration step.
+- `deploy/docker-compose.yml`, `deploy/Caddyfile`, and `deploy/.env.example`. Only Caddy
+  publishes ports; Caddy disables response buffering so the photo queue's events are not
+  held in a proxy buffer.
+- Structured JSON logging with central redaction of tokens, contact details, and
+  special-category fields — applied to the log message as well as its context.
+- `reportError`, a seam for an error tracker with nothing registered by default.
+- `scripts/backup.sh`, `scripts/verify-restore.sh`, and `scripts/smoke.sh`.
+- The initial database migration. Without it a production deployment came up with an empty
+  schema, because Payload's `push` is disabled outside development.
+- CI now builds the production image and asserts it starts as a non-root user.
+
+### Security
+
+- The token-scoped photo screen at `/photos/<token>` now sends the same `no-referrer`,
+  `noindex`, and `no-store` headers as the invitation page. It was missed when that route
+  was added; an E2E spec now asserts the headers on every surface that has them.
+- SVG is no longer an accepted upload type. Uploaded images are re-processed by sharp,
+  which strips anything executable — but sharp does not rasterise SVG, so an SVG was
+  stored as submitted: a script-capable document served from the wedding's own origin.
+- Media responses are served with `Content-Security-Policy: sandbox` and `nosniff`.
+- A baseline Content-Security-Policy on every response. Deliberately partial: `script-src`
+  is unset rather than set with `unsafe-inline`, and the gap is recorded.
+- `/admin` is marked `noindex`.
+
+### Fixed
+
+- `/api/health` reported a deployment whose migrations had not run as healthy: the
+  database answered, every page returned 500, and the uptime monitor stayed green. It now
+  checks that the schema exists.
+- The documented deploy-time migration command could not work — the standalone runtime
+  image contains no Payload CLI. Migrations run from a separate image built from the same
+  Dockerfile.

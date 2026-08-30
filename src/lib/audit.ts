@@ -3,6 +3,8 @@ import { getPayload } from 'payload'
 
 import { type AuditEventInput, hashIp, sanitiseMetadata } from '@/domain/audit/record'
 
+import { reportError } from './error-reporting'
+
 /**
  * The domain models an actor id as `string | number` so it is not tied to one database.
  * The Postgres adapter issues numeric ids, so coerce here rather than widening the
@@ -40,9 +42,6 @@ export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
       },
     })
   } catch (error) {
-    console.error('Failed to record audit event', {
-      action: input.action,
-      message: error instanceof Error ? error.message : 'unknown error',
-    })
+    reportError(error, { operation: 'audit.record', action: input.action })
   }
 }

@@ -1,0 +1,17 @@
+# Everything the image does not need. Keeping this tight matters for build speed and
+# for not shipping secrets or test artefacts into a production image.
+node_modules
+.next
+.git
+.github
+.claude
+test-results
+playwright-report
+docs
+tests
+*.log
+
+# Never, under any circumstances.
+.env
+.env.*
+!.env.example

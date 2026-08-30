@@ -1,6 +1,8 @@
 import type { QueueSnapshot } from '@/domain/photo-queue/queue'
 import { createInProcessTransport, type RealtimeTransport } from '@/domain/realtime/transport'
 
+import { logger } from './logger'
+
 /**
  * The process-wide broadcaster.
  *
@@ -21,9 +23,7 @@ export function photoQueueTransport(): RealtimeTransport<QueueSnapshot> {
     photoQueue: createInProcessTransport<QueueSnapshot>((error) => {
       // A failed delivery to one phone is not an application error; the client will
       // reconnect and resync from the revision. Never log the event itself.
-      console.warn('Photo queue: dropping a subscriber that failed to receive', {
-        message: error instanceof Error ? error.message : 'unknown error',
-      })
+      logger.warn('Photo queue: dropping a subscriber that failed to receive', { error })
     }),
   }
 
