@@ -73,6 +73,7 @@ organiser creates party → invitation generated → guest RSVPs → organiser s
 
 | Doc                           | Contents                                                 |
 | ----------------------------- | -------------------------------------------------------- |
+| `docs/USER_GUIDE.md`          | How to actually use the application, for an organiser    |
 | `docs/PRODUCT_SPEC.md`        | Vision, personas, requirements, MVP, acceptance criteria |
 | `docs/ARCHITECTURE.md`        | System design, boundaries, stack, real-time, deployment  |
 | `docs/DATA_MODEL.md`          | Entities, relationships, indexes, ER diagram             |
@@ -81,6 +82,7 @@ organiser creates party → invitation generated → guest RSVPs → organiser s
 | `docs/IMPLEMENTATION_PLAN.md` | **Live checklist — the resume point for a new session**  |
 | `docs/DECISIONS.md`           | ADRs                                                     |
 | `docs/CLIENT_DEPLOYMENT.md`   | Turning this platform into a client wedding              |
+| `docs/SMS_PROVIDERS.md`       | SMS vendor plan: console / Twilio / optional Textbee     |
 
 Detailed product requirements live in `/docs`, not here.
 
