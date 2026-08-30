@@ -61,6 +61,7 @@ in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 | Document                                           | Contents                                            |
 | -------------------------------------------------- | --------------------------------------------------- |
+| [USER_GUIDE](docs/USER_GUIDE.md)                   | How to use the application, for an organiser        |
 | [PRODUCT_SPEC](docs/PRODUCT_SPEC.md)               | Vision, personas, requirements, acceptance criteria |
 | [ARCHITECTURE](docs/ARCHITECTURE.md)               | System design, boundaries, stack, real-time         |
 | [DATA_MODEL](docs/DATA_MODEL.md)                   | Entities, relationships, indexes, ER diagram        |
