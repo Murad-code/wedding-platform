@@ -35,6 +35,11 @@ export default async function DashboardPage() {
             { href: '/dashboard/seating', label: 'Seating' },
             { href: '/dashboard/menu', label: 'Menu' },
             { href: '/dashboard/itinerary', label: 'Itinerary' },
+            // Gated because the page itself 404s when the feature is off; an organiser
+            // should never be sent to a dead link from their own dashboard.
+            ...(settings.features.photoQueue
+              ? [{ href: '/dashboard/photos', label: 'Photographs' }]
+              : []),
             { href: '/dashboard/contacts', label: 'Contacts' },
             { href: '/dashboard/settings', label: 'Wedding settings' },
           ].map((item) => (

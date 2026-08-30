@@ -195,6 +195,10 @@ test.describe('guests choosing meals', () => {
     await guestPage.getByRole('button', { name: /send our response/i }).click()
     await expect(guestPage.getByRole('status')).toBeVisible()
 
+    // Saving triggers a router refresh; wait for it to land before navigating again,
+    // or the reload races it.
+    await expect(guestPage.getByRole('button', { name: /update our response/i })).toBeVisible()
+
     // Change of heart.
     await guestPage.goto(invitationUrl)
     await guestPage.getByText(`${id} salmon`, { exact: true }).click()
@@ -235,6 +239,10 @@ test.describe('guests choosing meals', () => {
     await guestPage.getByText(`${id} beef`, { exact: true }).click()
     await guestPage.getByRole('button', { name: /send our response/i }).click()
     await expect(guestPage.getByRole('status')).toBeVisible()
+
+    // Saving triggers a router refresh; wait for it to land before navigating again,
+    // or the reload races it.
+    await expect(guestPage.getByRole('button', { name: /update our response/i })).toBeVisible()
 
     await guestPage.goto(invitationUrl)
     await guestPage

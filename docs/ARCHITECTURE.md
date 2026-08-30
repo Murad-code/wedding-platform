@@ -125,9 +125,19 @@ The broadcaster is in-process (a subscriber registry). That is sound because one
 runs one container. It is hidden behind `RealtimeTransport` so replacing it with Redis
 Pub/Sub or Ably is a single-file change if replicas ever become necessary (ADR-006).
 
-Events carry a monotonic revision number; clients that reconnect and find a newer revision
-refetch state rather than replaying missed events. This keeps the server stateless about
-per-client delivery.
+Events carry the whole queue plus a monotonic revision number, and a client applies one
+only when the revision is newer than what it holds. Nothing is ever replayed: a phone that
+reconnects is simply sent the current state as its first event, which is what makes
+recovery from a dropped connection identical to a first load. The server therefore keeps
+no per-client delivery state at all.
+
+The same counter guards writes. A controller sends the revision it was displaying, and a
+press from a screen that has fallen behind is refused rather than applied on top — two
+organisers both pressing _Call next_ would otherwise skip a group entirely (ADR-020).
+
+If the stream cannot be re-established after three attempts, the client falls back to
+polling the same state as JSON and keeps retrying the stream in the background. Venue
+wifi is the expected condition, not the exception.
 
 ## 6. Notifications
 

@@ -75,6 +75,7 @@ export interface Config {
     'menu-courses': MenuCourse;
     'menu-options': MenuOption;
     'guest-meal-selections': GuestMealSelection;
+    'photo-groups': PhotoGroup;
     'itinerary-items': ItineraryItem;
     'wedding-contacts': WeddingContact;
     media: Media;
@@ -94,6 +95,7 @@ export interface Config {
     'menu-courses': MenuCoursesSelect<false> | MenuCoursesSelect<true>;
     'menu-options': MenuOptionsSelect<false> | MenuOptionsSelect<true>;
     'guest-meal-selections': GuestMealSelectionsSelect<false> | GuestMealSelectionsSelect<true>;
+    'photo-groups': PhotoGroupsSelect<false> | PhotoGroupsSelect<true>;
     'itinerary-items': ItineraryItemsSelect<false> | ItineraryItemsSelect<true>;
     'wedding-contacts': WeddingContactsSelect<false> | WeddingContactsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -109,9 +111,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'wedding-settings': WeddingSetting;
+    'photo-queue-state': PhotoQueueState;
   };
   globalsSelect: {
     'wedding-settings': WeddingSettingsSelect<false> | WeddingSettingsSelect<true>;
+    'photo-queue-state': PhotoQueueStateSelect<false> | PhotoQueueStateSelect<true>;
   };
   locale: null;
   widgets: {
@@ -342,6 +346,41 @@ export interface GuestMealSelection {
   createdAt: string;
 }
 /**
+ * The photographs to take, in the order the photographer will call them.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-groups".
+ */
+export interface PhotoGroup {
+  id: number;
+  /**
+   * What the photographer will call out, e.g. “Bride’s immediate family”. Guests see this.
+   */
+  name: string;
+  /**
+   * Optional note, e.g. “on the terrace steps”. Guests see this.
+   */
+  description?: string | null;
+  /**
+   * Roughly how long this photo takes. Used to tell guests when to start heading over.
+   */
+  estimatedMinutes?: number | null;
+  /**
+   * Lower numbers are photographed first.
+   */
+  order: number;
+  /**
+   * Managed by the wedding-day controller. You should not need to set this.
+   */
+  status: 'queued' | 'get_ready' | 'now' | 'completed' | 'skipped';
+  /**
+   * Who needs to be in this photograph.
+   */
+  members?: (number | Guest)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * The order of the day.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -505,6 +544,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'guest-meal-selections';
         value: number | GuestMealSelection;
+      } | null)
+    | ({
+        relationTo: 'photo-groups';
+        value: number | PhotoGroup;
       } | null)
     | ({
         relationTo: 'itinerary-items';
@@ -693,6 +736,20 @@ export interface GuestMealSelectionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-groups_select".
+ */
+export interface PhotoGroupsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  estimatedMinutes?: T;
+  order?: T;
+  status?: T;
+  members?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "itinerary-items_select".
  */
 export interface ItineraryItemsSelect<T extends boolean = true> {
@@ -876,6 +933,22 @@ export interface WeddingSetting {
   createdAt?: string | null;
 }
 /**
+ * Internal state for the live photo queue. Maintained by the app.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-queue-state".
+ */
+export interface PhotoQueueState {
+  id: number;
+  /**
+   * Increases by one on every change to the queue.
+   */
+  revision: number;
+  lastActionAt?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "wedding-settings_select".
  */
@@ -917,6 +990,17 @@ export interface WeddingSettingsSelect<T extends boolean = true> {
         id?: T;
       };
   enabledFeatures?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-queue-state_select".
+ */
+export interface PhotoQueueStateSelect<T extends boolean = true> {
+  revision?: T;
+  lastActionAt?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

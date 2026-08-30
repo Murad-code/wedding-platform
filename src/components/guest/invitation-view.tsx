@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import type { ItineraryEntry } from '@/domain/itinerary/item'
 import type { MealSelection, MenuCourse } from '@/domain/menu/menu'
 import type { WeddingSettingsView } from '@/domain/wedding/settings'
@@ -116,6 +118,17 @@ export function InvitationView({
           </p>
         )}
       </section>
+      {settings.features.photoQueue &&
+      party.guests.some((guest) => guest.rsvpStatus === 'attending') ? (
+        <section className="mt-12 text-center">
+          <Link
+            href={`/photos/${token}`}
+            className="inline-block rounded-xl border border-guest-border bg-guest-surface px-5 py-3 text-sm"
+          >
+            On the day: see when your photograph is coming up
+          </Link>
+        </section>
+      ) : null}
     </main>
   )
 }

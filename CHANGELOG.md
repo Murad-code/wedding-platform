@@ -177,3 +177,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - E2E global setup clears accumulated login sessions. Payload stores sessions as an array
   and rewrites it on every login; after hundreds of logins, concurrent sign-ins began
   dropping each other's sessions and bouncing tests to the login page.
+
+### Added (Phase 7 — wedding-day photo queue)
+
+- `PhotoGroups` with unique names, an organiser-defined running order, an optional
+  duration estimate, and membership; `PhotoQueueState` global holding a revision counter.
+- Photo queue state machine (`queued → get_ready → now → completed | skipped`) in
+  `src/domain/photo-queue/`, with `get_ready` derived on read as well as on write.
+- Group management at `/dashboard/photos`: add, reorder from the keyboard, add and remove
+  members, delete.
+- Wedding-day controller at `/dashboard/photos/run` — Previous, Call next, Complete,
+  Skip — with large targets for one-handed outdoor use.
+- `RealtimeTransport` abstraction with an in-process broadcaster, and an SSE endpoint at
+  `/api/photo-queue/stream` with `/api/photo-queue` as a JSON polling fallback.
+- Guest queue screen at `/photos`, and at `/photos/<token>` with the guest's own
+  photographs and how far away each one is. Emphasis rises with proximity.
+- Connection state shown plainly ("Live" / "Reconnecting…" / "Live (slow connection)"),
+  with automatic reconnection, revision-based resync, and a polling fallback after three
+  consecutive stream failures.
+- A link from the invitation page to the guest's own queue, for guests who are attending.
+
+### Security
+
+- The live queue is public but carries **no membership**: the stream and its fallback
+  send group names, descriptions, order, status, and estimates only. A guest's own groups
+  are resolved server-side from their invitation token into group ids (ADR-021, T15).
+- Stream connections are capped globally rather than per address, because every guest at
+  a venue shares one (ADR-022, T16).
+- A stale controller is refused rather than applied, so two organisers pressing Call next
+  cannot advance the queue twice and skip a group entirely (ADR-020).
+- Deleting a guest now also removes them from every photo group.
+
+### Fixed
+
+- The duplicate-name error said "photo" where the rest of the feature says "photograph".
+
+### Testing
+
+- The `menu` E2E spec now waits for the RSVP form's router refresh to land before
+  reloading, matching the guard the `rsvp` spec already had. Adding a link to the
+  invitation page widened the latent race enough to fail reliably.
+
+### Added (development tooling)
+
+- `pnpm seed` — deterministic, idempotent development data: six parties, sixteen guests
+  covering every RSVP state along with plus-one, child, infant, dietary, allergy, and
+  accessibility cases, and five photo groups. Refuses to run when `NODE_ENV=production`.

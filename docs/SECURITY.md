@@ -26,6 +26,8 @@ credentials → wedding content → media.
 | T12 | SMS/email abuse (cost, spam)                | Compromised account    | Per-guest dedupe key, send caps, consent flag required                                |
 | T13 | Secrets in the repository                   | Accident               | `.env` git-ignored, `.env.example` only, secret scanning in CI                        |
 | T14 | Backup exposure                             | Infrastructure         | Encrypted backups, restricted access, isolated per client                             |
+| T15 | Guest list harvesting via the live queue    | Anyone                 | The stream carries group names only; membership is resolved server-side (ADR-021)     |
+| T16 | Resource exhaustion via open SSE streams    | Anyone                 | Global subscriber ceiling with `503` + `Retry-After`, never a per-IP limit (ADR-022)  |
 
 Explicitly **out of scope** for MVP: DDoS absorption (delegated to Cloudflare), and
 insider misuse by a legitimately authorised organiser (mitigated by audit logging, not
@@ -64,6 +66,15 @@ The brief requires no publicly enumerable guest directory, and we go further:
 - No sequential or guessable identifiers appear in guest-facing URLs.
 - The invitation page returns **only** the guests in the resolved party — the party is
   derived server-side from the token, never from a request parameter.
+- The wedding-day photo queue is **public but membership-free**. The SSE stream and its
+  polling fallback carry each group's name, description, order, status, and estimate, and
+  nothing else. Who is in a group is resolved server-side from the invitation token into
+  a list of group ids; the browser never receives a guest id or a name (ADR-021). Group
+  names are the photographer's call-outs, meant to be read aloud to the whole field.
+- The `photo-groups` collection itself is closed to anonymous reads, so the membership is
+  not reachable by the Payload REST API either. An E2E test asserts both halves: that a
+  member's name appears nowhere in the public page or the snapshot, and that the
+  collection refuses an anonymous request.
 - If guest search is ever added, it must require a token, be rate limited per token, and
   return only within-party results. Recorded as a backlog constraint, not a feature.
 
@@ -82,6 +93,8 @@ outage during the event. The limits below are shaped around that.
 | `POST /api/rsvp`                             | per IP                 | 300 / min    | Ceiling against scripted flooding, sized so a coach party replying at once is unaffected.                  |
 | Organiser login                              | per IP and per account | with backoff | Credentials are low-entropy; this one genuinely is per-IP.                                                 |
 | CSV import/export                            | per authenticated user | —            |                                                                                                            |
+| `GET /api/photo-queue/stream`                | global subscriber cap  | 500 open     | Per-IP would shut out a whole venue on one wifi; those refused fall back to polling (ADR-022).             |
+| `GET /photos/:token` — **failed** lookup     | per IP                 | 20 / min     | Same enumeration signal, same limiter, as the invitation page.                                             |
 
 A rate-limited invitation lookup returns exactly the same "not found" page as an unknown
 token, so throttling does not become an oracle either.

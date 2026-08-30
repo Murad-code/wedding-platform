@@ -386,3 +386,67 @@ the select, so the accessible path is the tested path.
 
 **Consequence.** Both routes call one server action, so there is a single place where
 authorisation and validation happen.
+
+---
+
+## ADR-020 — The photo queue is guarded by a revision counter, not a lock
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** At a real wedding the controller is open on more than one screen — the
+couple's planner has it, and so does whoever is standing next to the photographer. Both
+press _Call next_ when the group forms up.
+
+**Decision.** `PhotoQueueState.revision` increments on every change. A controller sends
+the revision it was displaying; if it no longer matches, the press is refused and the
+screen is handed the current state instead. The transition itself runs in a database
+transaction.
+
+**Rationale.** Two presses landing as two advances means a group is never photographed —
+the exact failure the feature exists to prevent. A row lock would serialise the writes
+but still apply both. Refusing the stale press is the behaviour a person expects: the
+button did nothing because someone else had already done it, and the screen says so.
+
+**Consequence.** The same counter does double duty as the resync mechanism for guests
+(ADR-006): a phone applies a snapshot only when its revision is newer, so a duplicate or
+out-of-order delivery after a reconnect is harmless.
+
+---
+
+## ADR-021 — The live queue is public; membership never leaves the server
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** The guest screen must show _your_ group and how far away it is. The obvious
+implementation streams the groups with their members and lets the browser find itself.
+
+**Decision.** The stream and its polling fallback carry group name, description, order,
+status, and estimate — never member ids or names. A guest's own groups are resolved
+server-side from their invitation token into a list of group **ids**, which is rendered
+into their page. The browser computes distance from ids alone.
+
+**Rationale.** A stream carrying membership would be a guest directory available to
+anyone who opened the wedding site — precisely what `docs/SECURITY.md` §3 forbids. Group
+_names_ are the photographer's call-outs and are meant to be read aloud to a field of
+guests; who is in them is not. Sending ids also keeps the distance calculation in one
+pure function shared by both surfaces, so the server and the phone cannot disagree.
+
+**Consequence.** The organiser's controller needs the names, so its page fetches them
+server-side and merges them with the stream by group id. The public page never can.
+
+---
+
+## ADR-022 — Stream connections are capped globally, not per address
+
+**Status:** Accepted (2026-08-30)
+
+**Context.** A long-lived SSE connection per guest is an obvious thing to rate-limit per
+IP.
+
+**Decision.** The endpoint refuses new subscribers past a global ceiling with `503` and
+`Retry-After`; there is no per-address limit.
+
+**Rationale.** The same reasoning as ADR-016. Every guest is on the venue's wifi, so a
+per-address limit would shut out the entire room at exactly the moment the feature
+matters. A global cap protects the server, and anyone turned away falls back to polling
+rather than seeing a broken screen.

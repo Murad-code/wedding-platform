@@ -111,13 +111,11 @@ erDiagram
 
     PHOTO_GROUPS {
         uuid   id PK
-        string name
+        string name UK
         text   description
         int    order
         int    estimatedMinutes
         enum   status "queued|get_ready|now|completed|skipped"
-        date   calledAt
-        date   completedAt
     }
 
     PHOTO_GROUP_MEMBERS {
@@ -265,10 +263,25 @@ supplier timings.
 
 ### PhotoGroups / PhotoGroupMembers / PhotoQueueState
 
-A guest may belong to several groups; `PhotoQueueState` (global) holds the pointer to the
-current group. Statuses are `queued → get_ready → now → completed`, with `skipped` as an
-escape hatch. Valid transitions are enforced in the service layer, not the UI, and are
-directly unit-tested.
+A guest may belong to several groups. Membership is a Payload `hasMany` relationship, so
+the join table is `photo_groups_rels` rather than a hand-written collection; the ER
+diagram keeps the logical name. `Guests.beforeDelete` removes a deleted guest from every
+group, because the join would otherwise keep counting them.
+
+Statuses are `queued → get_ready → now → completed`, with `skipped` as an escape hatch.
+Transitions are enforced in `src/domain/photo-queue/`, not the UI, and are directly
+unit-tested. `get_ready` is **derived, never authoritative**: the projection normalises
+the queue on read as well as on write, so exactly one group is `now` and the next pending
+group — and only that one — is `get_ready`, whatever is in the table.
+
+There is no `calledAt`/`completedAt` per group. Nothing in the MVP reads them, and the
+audit log already records every queue action with the organiser who pressed it and when,
+which is the real "what happened when" record.
+
+`PhotoQueueState` (global) holds a monotonic `revision` rather than a pointer to the
+current group — the group statuses already say where the run is. Every change increments
+it; every event carries it; a controller sends the revision it was showing and is refused
+if it has fallen behind (ADR-020).
 
 "How far away is my group?" is computed from `order` relative to the current group.
 
@@ -296,6 +309,8 @@ Provides RSVP history (ADR-009) without a second source of current state.
 | One choice per course      | `UNIQUE (guest, course)` on meal selections |
 | Notification dedupe        | `UNIQUE` on `notifications.dedupe_key`      |
 | Queue ordering             | index on `photo_groups.order`               |
+| Queue status filters       | index on `photo_groups.status`              |
+| Unambiguous call-outs      | `UNIQUE` on `photo_groups.name`             |
 | Table naming               | `UNIQUE` on `tables.name`                   |
 | Organiser login            | `UNIQUE` on `users.email` (Payload default) |
 

@@ -129,6 +129,31 @@ export const Guests: CollectionConfig = {
           req,
           overrideAccess: true,
         })
+
+        // Photo group membership is a many-to-many join, so a deleted guest would
+        // otherwise stay in the group — invisible in the UI, but still counted.
+        const groups = await req.payload.find({
+          collection: 'photo-groups',
+          where: { members: { equals: id } },
+          limit: 500,
+          depth: 0,
+          req,
+          overrideAccess: true,
+        })
+
+        for (const group of groups.docs) {
+          await req.payload.update({
+            collection: 'photo-groups',
+            id: group.id,
+            data: {
+              members: (group.members ?? [])
+                .map((member) => (typeof member === 'number' ? member : member.id))
+                .filter((memberId) => memberId !== id),
+            },
+            req,
+            overrideAccess: true,
+          })
+        }
       },
     ],
   },

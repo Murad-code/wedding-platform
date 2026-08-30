@@ -14,10 +14,12 @@ import { ItineraryItems } from './collections/ItineraryItems'
 import { MenuCourses } from './collections/MenuCourses'
 import { MenuOptions } from './collections/MenuOptions'
 import { Media } from './collections/Media'
+import { PhotoGroups } from './collections/PhotoGroups'
 import { Tables } from './collections/Tables'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { WeddingContacts } from './collections/WeddingContacts'
+import { PhotoQueueState } from './globals/PhotoQueueState'
 import { WeddingSettings } from './globals/WeddingSettings'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -41,12 +43,13 @@ export default buildConfig({
     MenuCourses,
     MenuOptions,
     GuestMealSelections,
+    PhotoGroups,
     ItineraryItems,
     WeddingContacts,
     Media,
     AuditEvents,
   ],
-  globals: [WeddingSettings],
+  globals: [WeddingSettings, PhotoQueueState],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

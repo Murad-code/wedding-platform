@@ -263,19 +263,45 @@ leaving the database exactly as they found it. Verified visually.
 
 ---
 
-## Phase 7 — Photo queue
+## Phase 7 — Photo queue ✅
 
-- [ ] `PhotoGroups` + membership
-- [ ] `PhotoQueueState` global with revision counter
-- [ ] State machine `queued → get_ready → now → completed | skipped` + transition tests
-- [ ] Group management UI
-- [ ] Wedding-day controller (Previous / Call Next / Complete / Skip)
-- [ ] `RealtimeTransport` abstraction + in-process SSE implementation
-- [ ] `/api/photo-queue/stream` SSE endpoint
-- [ ] Guest queue screen (NOW / UP NEXT / YOUR GROUP / distance)
-- [ ] Reconnection + revision-based resync
-- [ ] Polling fallback
-- [ ] Tests: transitions, nearest-group calculation, reconnect resync
+- [x] `PhotoGroups` collection (unique names, order, advisory estimate) + membership
+- [x] `PhotoQueueState` global with a monotonic revision counter
+- [x] State machine `queued → get_ready → now → completed | skipped` + transition tests
+- [x] `get_ready` derived, not stored — the queue is normalised on read and on write, so
+      a direct edit in Payload admin cannot leave two groups "up next"
+- [x] Group management UI: add, reorder, add/remove members, delete
+- [x] Wedding-day controller (Previous / Call next / Complete / Skip)
+- [x] `RealtimeTransport` abstraction + in-process broadcaster implementation
+- [x] `/api/photo-queue/stream` SSE endpoint, with `/api/photo-queue` as the fallback
+- [x] Guest queue screen (NOW / UP NEXT / YOUR PHOTOS / distance), public at `/photos`
+      and token-scoped at `/photos/[token]`
+- [x] Reconnection + revision-based resync
+- [x] Polling fallback after three consecutive stream failures, retrying the stream
+- [x] Optimistic concurrency so two controllers cannot double-advance (ADR-020)
+- [x] Tests: transitions, distance calculation, membership never leaving the server,
+      live update without a reload, recovery after the connection drops
+
+**Decisions taken here:** ADR-020 (revision counter, not a lock), ADR-021 (the live queue
+is public but membership-free), ADR-022 (global stream cap, never per-IP).
+
+**Fixed during this phase:**
+
+- Adding the "see your photograph" link to the invitation page widened a latent race in
+  the menu E2E suite: the RSVP form's `router.refresh()` was still in flight when the test
+  navigated to the same URL. The `rsvp` spec already guarded against this; the `menu` spec
+  had not, and now waits for the server-rendered button to change before reloading.
+- The duplicate-name error said "photo" where every other string says "photograph".
+
+**Known constraint:** the photo queue is one global run (ADR-001), so its E2E spec takes
+exclusive ownership of the queue and is scoped to a single browser project. WebKit's
+`EventSource` is covered separately by `photo-queue-live.e2e.spec.ts`, which only reads.
+A consequence is that an E2E run leaves the queue empty; `pnpm seed` restores it.
+
+**Phase 7 verification (2026-08-30):** `pnpm verify` passes; 312 unit tests and 191
+Playwright tests green across Chromium and WebKit in ~73s, with 19 deliberate skips
+(the queue-driving tests on the mobile project). The SSE path was verified by hand
+against the running server as well as by test.
 
 ---
 
@@ -309,12 +335,21 @@ leaving the database exactly as they found it. Verified visually.
 
 ## Cross-cutting
 
-- [ ] Deterministic seed data — Sarah & Adam, 20–30 guests, mixed RSVP states, dietary
-      needs, menu, tables, itinerary, contacts, photo groups
-- [ ] Seed script guarded against running in production
+- [~] Deterministic seed data — `pnpm seed` restores 6 parties, 16 guests across every
+  RSVP state (including a plus-one, children, an infant, dietary, allergy, and
+  accessibility cases) and 5 photo groups. Idempotent, so it can be re-run to repair a
+  partially wiped development database. Menu, tables, itinerary, and contacts are not
+  seeded yet — they were already present when this landed
+- [x] Seed script guarded against running in production — refuses on `NODE_ENV=production`
 - [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
       indefinitely, which makes a dev database noisy over time (harmless, but untidy)
 - [ ] Keep this file, ADRs, and docs current as work lands
+
+**Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
+`ON DELETE SET NULL` foreign key. Deleting a party through the app is safe — a hook
+removes its guests first — but a delete issued directly against the database fails on the
+constraint rather than cascading. That is the safe failure, and it is worth knowing before
+anyone writes a maintenance script.
 
 ## Backlog
 

@@ -19,6 +19,7 @@ export function guestNavItems(features: FeatureFlags): NavItem[] {
   ]
 
   if (features.menu) items.push({ href: '/menu', label: 'Menu' })
+  if (features.photoQueue) items.push({ href: '/photos', label: 'Photos' })
   if (features.faqs) items.push({ href: '/faqs', label: 'FAQs' })
   if (features.contacts) items.push({ href: '/contact', label: 'Contact' })
   if (features.rsvp) items.push({ href: '/rsvp', label: 'RSVP' })

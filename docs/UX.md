@@ -28,6 +28,7 @@ GUEST (public, mobile-first)
   /invite/[token]           Personalised invitation + RSVP        [token-gated]
   /invite/[token]/confirmed Confirmation, editable until deadline [token-gated]
   /photos                   Wedding-day live photo queue          [feature-flagged]
+  /photos/[token]           The same queue, plus your own groups  [token-gated]
 
 ORGANISER (authenticated)
   /login
