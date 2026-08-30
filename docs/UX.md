@@ -46,7 +46,7 @@ ORGANISER (authenticated)
   /dashboard/notifications  Messages sent to guests, and what failed
   /dashboard/website        Content and section visibility
   /dashboard/settings       Wedding settings
-  /dashboard/team           Organiser users                       [admin only]
+  /dashboard/team           Organiser users                       [admin only, NOT BUILT]
 
 PLATFORM
   /admin                    Payload Admin                         [admin only]

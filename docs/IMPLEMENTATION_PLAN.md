@@ -444,6 +444,11 @@ tests, 220 Playwright tests with 24 deliberate skips.
 - [x] Seed script guarded against running in production — refuses on `NODE_ENV=production`
 - [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
       indefinitely, which makes a dev database noisy over time (harmless, but untidy)
+- [ ] **`/dashboard/team` — organiser account management.** `docs/UX.md` has listed this
+      page since Phase 0 and it was never built. The permissions behind it exist and are
+      tested (`canManageTeam`), and the Users collection is correctly admin-only, so
+      adding an account works — but only through Payload admin at `/admin`, which the
+      organiser product is supposed to keep people out of (ADR-003)
 - [ ] Keep this file, ADRs, and docs current as work lands
 - [ ] **Complete the Content-Security-Policy.** `script-src` and `style-src` are unset
       (ADR-029). Doing it properly means a per-request nonce threaded through `proxy.ts`

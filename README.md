@@ -27,6 +27,28 @@ pnpm dev
 The dev database uses port **5433** so it never collides with a Postgres you may already
 be running on 5432.
 
+### Signing in for the first time
+
+**There are no default credentials, and there never will be.** A shipped username and
+password is the single most common way a deployment gets breached, and this repository is
+copied to make real weddings.
+
+Create your own account:
+
+```bash
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at-least-12-characters' ADMIN_NAME='Your Name' pnpm create-admin
+```
+
+Then sign in at http://localhost:3000/dashboard. The password is read from the
+environment so it never lands in your shell history or a process listing, and it is never
+logged.
+
+If you have run the end-to-end tests, they will also have created throwaway accounts you
+can sign in with — `e2e-admin-0@example.test`, `e2e-organiser-0@example.test`, or
+`e2e-viewer-0@example.test`, all with the password `e2e-only-password-123`. They are handy
+for seeing what each role can do. They exist only in a local or CI database: the setup
+that creates them refuses to run when `NODE_ENV=production`.
+
 ## Commands
 
 | Command                       | Purpose                                        |

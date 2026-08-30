@@ -32,8 +32,34 @@ Three kinds of account:
 - **Viewer** — can look, cannot change anything. Useful for a parent or a planner who
   wants to follow along without being able to move the seating plan.
 
-There is also `/admin`, a technical maintenance screen restricted to admins. You should
-never need it — everything you actually do lives in `/dashboard`.
+### What each role can do
+
+|                                                    | Viewer | Organiser | Admin |
+| -------------------------------------------------- | ------ | --------- | ----- |
+| See everything in the dashboard                    | ✅     | ✅        | ✅    |
+| Change anything — guests, seating, menu, the queue | —      | ✅        | ✅    |
+| Send messages to guests                            | —      | ✅        | ✅    |
+| Create and remove organiser accounts, change roles | —      | —         | ✅    |
+| Reach `/admin`                                     | —      | —         | ✅    |
+
+Nobody can change their own role, including an admin editing their own profile. That is
+deliberate: it is the difference between "a viewer account" and "a viewer account until
+somebody works out how to edit it".
+
+### Creating accounts
+
+**There are no default credentials.** The first account is created deliberately, from the
+command line:
+
+```bash
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at-least-12-characters' ADMIN_NAME='Your Name' pnpm create-admin
+```
+
+After that, an admin adds everyone else through `/admin` → Users. There is not yet a
+friendly screen for this in the dashboard itself — it is on the list.
+
+`/admin` is a technical maintenance screen restricted to admins. Apart from adding
+accounts, you should never need it: everything you actually do lives in `/dashboard`.
 
 ---
 
