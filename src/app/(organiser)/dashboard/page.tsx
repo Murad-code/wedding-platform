@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { SetupChecklist } from '@/components/organiser/setup-checklist'
 import { StatCard } from '@/components/organiser/stat-card'
+import { canManageTeam } from '@/domain/auth/roles'
 import { daysUntilWedding } from '@/domain/wedding/settings'
 import { requireOrganiser } from '@/lib/auth/session'
 import { getDashboardTotals } from '@/lib/guests'
@@ -43,6 +44,8 @@ export default async function DashboardPage() {
             { href: '/dashboard/notifications', label: 'Messages' },
             { href: '/dashboard/contacts', label: 'Contacts' },
             { href: '/dashboard/settings', label: 'Wedding settings' },
+            ...(canManageTeam(session.actor) ? [{ href: '/dashboard/team', label: 'Team' }] : []),
+            { href: '/dashboard/account', label: 'Your account' },
           ].map((item) => (
             <Link
               key={item.href}
