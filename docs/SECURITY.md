@@ -10,24 +10,24 @@ decisions below.
 Assets, ranked: guest PII (especially health data) → invitation tokens → organiser
 credentials → wedding content → media.
 
-| #   | Threat                                      | Actor                  | Mitigation                                                                            |
-| --- | ------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------- |
-| T1  | Guest list harvesting                       | Curious guest, scraper | No guest directory, no enumerable IDs, no list endpoint on the guest surface          |
-| T2  | Invitation token brute force                | Opportunist            | 256-bit tokens; rate limiting; generic failure response                               |
-| T3  | Token leak via referrer/logs/screenshot     | Accidental             | `Referrer-Policy: no-referrer` on invite routes; token redaction in logs; `noindex`   |
-| T4  | Party A reading Party B's invitation        | Guest                  | Server-side scoping by resolved party; never trust a client-supplied party id         |
-| T5  | Unauthenticated access to organiser APIs    | Anyone                 | Payload access control + `requireOrganiser()` + middleware                            |
-| T6  | Privilege escalation (`viewer` → `admin`)   | Insider                | Role changes restricted to `admin`; users cannot edit their own role                  |
-| T7  | RSVP tampering after the deadline           | Guest                  | Deadline enforced server-side, not by hiding the button                               |
-| T8  | Stored XSS via rich text or guest free-text | Guest/organiser        | Rich text stored structured (Lexical), never `dangerouslySetInnerHTML` on guest input |
-| T9  | SQL injection                               | Anyone                 | Parameterised queries via Drizzle; no string-built SQL                                |
-| T10 | CSRF on organiser mutations                 | Anyone                 | `SameSite=Lax` cookies + Payload CSRF allowlist + no state-changing GETs              |
-| T11 | Malicious file upload                       | Organiser account      | Raster MIME types only — no SVG; images re-processed by sharp; media served sandboxed |
-| T12 | SMS/email abuse (cost, spam)                | Compromised account    | Unique dedupe key per guest and message, organiser-only dispatch, consent required    |
-| T13 | Secrets in the repository                   | Accident               | `.env` git-ignored, `.env.example` only, secret scanning in CI                        |
-| T14 | Backup exposure                             | Infrastructure         | Encrypted backups, restricted access, isolated per client                             |
-| T15 | Guest list harvesting via the live queue    | Anyone                 | The stream carries group names only; membership is resolved server-side (ADR-021)     |
-| T16 | Resource exhaustion via open SSE streams    | Anyone                 | Global subscriber ceiling with `503` + `Retry-After`, never a per-IP limit (ADR-022)  |
+| #   | Threat                                      | Actor                  | Mitigation                                                                                                                                  |
+| --- | ------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | Guest list harvesting                       | Curious guest, scraper | No guest directory, no enumerable IDs, no list endpoint on the guest surface                                                                |
+| T2  | Invitation token brute force                | Opportunist            | 256-bit tokens; rate limiting; generic failure response                                                                                     |
+| T3  | Token leak via referrer/logs/screenshot     | Accidental             | `Referrer-Policy: no-referrer` on invite routes; token redaction in logs; `noindex`                                                         |
+| T4  | Party A reading Party B's invitation        | Guest                  | Server-side scoping by resolved party; never trust a client-supplied party id                                                               |
+| T5  | Unauthenticated access to organiser APIs    | Anyone                 | Payload access control + `requireOrganiser()` + middleware                                                                                  |
+| T6  | Privilege escalation (`viewer` → `admin`)   | Insider                | Role changes admin-only; nobody changes their own role or removes the last admin (collection hook, so `/admin` and the API are covered too) |
+| T7  | RSVP tampering after the deadline           | Guest                  | Deadline enforced server-side, not by hiding the button                                                                                     |
+| T8  | Stored XSS via rich text or guest free-text | Guest/organiser        | Rich text stored structured (Lexical), never `dangerouslySetInnerHTML` on guest input                                                       |
+| T9  | SQL injection                               | Anyone                 | Parameterised queries via Drizzle; no string-built SQL                                                                                      |
+| T10 | CSRF on organiser mutations                 | Anyone                 | `SameSite=Lax` cookies + Payload CSRF allowlist + no state-changing GETs                                                                    |
+| T11 | Malicious file upload                       | Organiser account      | Raster MIME types only — no SVG; images re-processed by sharp; media served sandboxed                                                       |
+| T12 | SMS/email abuse (cost, spam)                | Compromised account    | Unique dedupe key per guest and message, organiser-only dispatch, consent required                                                          |
+| T13 | Secrets in the repository                   | Accident               | `.env` git-ignored, `.env.example` only, secret scanning in CI                                                                              |
+| T14 | Backup exposure                             | Infrastructure         | Encrypted backups, restricted access, isolated per client                                                                                   |
+| T15 | Guest list harvesting via the live queue    | Anyone                 | The stream carries group names only; membership is resolved server-side (ADR-021)                                                           |
+| T16 | Resource exhaustion via open SSE streams    | Anyone                 | Global subscriber ceiling with `503` + `Retry-After`, never a per-IP limit (ADR-022)                                                        |
 
 Explicitly **out of scope** for MVP: DDoS absorption (delegated to Cloudflare), and
 insider misuse by a legitimately authorised organiser (mitigated by audit logging, not

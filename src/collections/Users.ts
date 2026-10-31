@@ -1,8 +1,22 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
 
 import { authenticated, teamManager } from '@/domain/auth/access'
 import { toActor } from '@/domain/auth/access'
-import { ROLES, isAdmin } from '@/domain/auth/roles'
+import { ROLES, isAdmin, isRole } from '@/domain/auth/roles'
+import { checkRemoval, checkRoleChange, type TeamMember } from '@/domain/auth/team'
+
+async function teamOf(req: PayloadRequest): Promise<TeamMember[]> {
+  const users = await req.payload.find({
+    collection: 'users',
+    limit: 1000,
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  return users.docs.flatMap((user) => (isRole(user.role) ? [{ id: user.id, role: user.role }] : []))
+}
+
+const actorIdOf = (req: PayloadRequest) => toActor(req.user)?.id ?? null
 
 /**
  * Organiser accounts. Guests never have accounts — their invitation token is their
@@ -48,4 +62,24 @@ export const Users: CollectionConfig = {
       },
     },
   ],
+  // Enforced here rather than only in the dashboard, so Payload admin and the REST API
+  // cannot demote or remove the last admin or let someone change their own role.
+  hooks: {
+    beforeChange: [
+      async ({ data, originalDoc, operation, req }) => {
+        if (operation !== 'update' || !originalDoc || !isRole(data.role)) return data
+        if (data.role === originalDoc.role) return data
+
+        const check = checkRoleChange(await teamOf(req), actorIdOf(req), originalDoc.id, data.role)
+        if (!check.ok) throw new APIError(check.reason, 400, undefined, true)
+        return data
+      },
+    ],
+    beforeDelete: [
+      async ({ id, req }) => {
+        const check = checkRemoval(await teamOf(req), actorIdOf(req), id)
+        if (!check.ok) throw new APIError(check.reason, 400, undefined, true)
+      },
+    ],
+  },
 }

@@ -307,3 +307,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The documented deploy-time migration command could not work — the standalone runtime
   image contains no Payload CLI. Migrations run from a separate image built from the same
   Dockerfile.
+
+### Added (team management)
+
+- `/dashboard/team` for admins: add someone with a starting password, change their role,
+  set a new password (which signs them out everywhere), and remove them.
+- `/dashboard/account` for everyone: see your role and change your password. It needs your
+  current password and then signs you out everywhere.
+
+### Security
+
+- Nobody can change their own role or remove their own account, and the last admin cannot
+  be demoted or removed. Enforced on the Users collection, so it holds in `/admin` and the
+  REST API as well as the dashboard. Previously an admin could do both through `/admin`.
+
+### Fixed
+
+- CI: the E2E suite now sets up the demo wedding itself instead of relying on a
+  hand-populated database, test tokens are generated rather than written out, and the
+  British English copy rewrite's lint error and two stale tests are fixed.

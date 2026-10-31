@@ -451,7 +451,8 @@ been true only against a hand-populated development database.
 - [x] **Lint:** unescaped apostrophes from the British English copy rewrite.
 - [x] **Stale tests from that rewrite**, which CI never reached because lint failed
       first: a unit test expecting "respond" and an E2E label expecting an em dash.
-- [ ] Confirm CI green on GitHub.
+- [x] CI green on GitHub for the first time: all three jobs (verify including E2E, image,
+      secret scan) pass on the fix, PR #1.
 
 Verified locally against an empty scratch database, as CI sees it: the four specs that
 failed in CI (88 tests across both projects) and the RSVP spec all pass.
@@ -464,11 +465,15 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
 - [x] Seed script guarded against running in production — refuses on `NODE_ENV=production`
 - [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
       indefinitely, which makes a dev database noisy over time (harmless, but untidy)
-- [ ] **`/dashboard/team` — organiser account management.** `docs/UX.md` has listed this
-      page since Phase 0 and it was never built. The permissions behind it exist and are
-      tested (`canManageTeam`), and the Users collection is correctly admin-only, so
-      adding an account works — but only through Payload admin at `/admin`, which the
-      organiser product is supposed to keep people out of (ADR-003)
+- [x] **`/dashboard/team`** (admin only): list, add with a starting password, change role,
+      set a new password (signs them out everywhere), remove. Plus **`/dashboard/account`**
+      for everyone: see your role, change your password (needs the current one, then signs
+      you out everywhere). Without it, organisers and viewers had no way to change a
+      password at all, because `/admin` is admin-only
+- [x] Team rules enforced on the Users collection, not just the page: nobody changes their
+      own role or removes their own account, and the last admin cannot be demoted or
+      removed. Before this, an admin could do both through `/admin`, and the user guide
+      claimed otherwise
 - [ ] Keep this file, ADRs, and docs current as work lands
 - [ ] **Complete the Content-Security-Policy.** `script-src` and `style-src` are unset
       (ADR-029). Doing it properly means a per-request nonce threaded through `proxy.ts`
