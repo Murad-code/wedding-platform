@@ -183,15 +183,22 @@ there rather than in the application, since it is meaningless over plain HTTP an
 development server must never send it.
 
 Set by the application on every response: `X-Content-Type-Options: nosniff`,
-`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and a
-`Content-Security-Policy` of `base-uri 'self'; form-action 'self'; frame-ancestors 'none';
-object-src 'none'`.
+`X-Frame-Options: DENY`, and `Referrer-Policy: strict-origin-when-cross-origin`.
 
-**The CSP is deliberately partial.** `script-src` and `style-src` are not set, because
-doing so properly needs a per-request nonce threaded through the proxy and both root
-layouts, and setting them loosely with `unsafe-inline` would look like a policy while
-permitting the injection a policy exists to stop (ADR-029). This is an open item in
-`docs/IMPLEMENTATION_PLAN.md`, not a claim of completeness.
+**Content-Security-Policy (ADR-030).** Every page the guest site and dashboard render gets
+a fresh nonce from `src/proxy.ts`, and the policy allows only scripts and `<style>`
+elements carrying it: `script-src 'self' 'nonce-…' 'strict-dynamic'`, `style-src 'self'
+'nonce-…'`, with no `'unsafe-inline'` for either, plus `default-src`, `connect-src`,
+`img-src`, and `font-src` limited to the wedding's own origin. Next reads the nonce from
+the request and attaches it to every script it renders. An injected `<script>` or
+`<style>` therefore does not run, which is the protection a CSP exists to give.
+
+The definitions live in `src/domain/security/csp.ts`. Payload admin and the API get a
+baseline policy (`base-uri`, `form-action`, `frame-ancestors`, `object-src`), because
+Payload's admin ships inline scripts of its own that carry no nonce of ours. An E2E test
+records every violation the browser reports across the guest site, the live photo
+stream, and the dashboard, and fails on any. It was checked by breaking the policy on
+purpose and watching it fail.
 
 Wherever an invitation token appears in the URL path — `/invite/:token` **and**
 `/photos/:token` — the response is tightened to `Referrer-Policy: no-referrer`,

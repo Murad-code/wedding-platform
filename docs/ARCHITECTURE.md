@@ -97,7 +97,8 @@ Authorisation is enforced in three places, deliberately redundant:
 1. Payload collection `access` functions — the backstop that covers the Local API,
    REST, GraphQL, and Admin at once.
 2. `requireOrganiser()` in organiser layouts and route handlers.
-3. Middleware for coarse route protection.
+3. `src/proxy.ts` (Next 16's replacement for middleware) for coarse route protection, and a
+   fresh CSP nonce for every page (ADR-030).
 
 The guest surface never receives an authenticated Payload user, so a guest request cannot
 reach organiser data even if a query were written carelessly. Detail in `docs/SECURITY.md`.

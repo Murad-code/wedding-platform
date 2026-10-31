@@ -592,7 +592,7 @@ reasoning about it — the documented command had been wrong since it was writte
 
 ## ADR-029 — A partial Content-Security-Policy, honestly labelled
 
-**Status:** Accepted (2026-08-30)
+**Status:** Superseded by ADR-030 (2026-10-31)
 
 **Context.** A CSP is standard hardening, but a _useful_ `script-src` needs a per-request
 nonce threaded through the proxy and both root layouts, and Payload's admin bundle would
@@ -607,3 +607,35 @@ injected form posting an RSVP somewhere else, framing, and plugin embedding. Set
 `script-src` loosely — with `unsafe-inline`, which is what makes it "just work" — would be
 worse than not setting it: it would look like a policy in an audit while permitting
 exactly the injection a policy exists to stop.
+
+---
+
+## ADR-030 — A nonce-based Content-Security-Policy, with no inline allowances
+
+**Status:** Accepted (2026-10-31). Supersedes ADR-029.
+
+**Context.** ADR-029 shipped only the directives that could not break anything and left
+`script-src` and `style-src` unset, because a useful policy needs a per-request nonce.
+
+**Decision.** `src/proxy.ts` now runs on every page, generates a 128-bit nonce, and sets a
+policy that allows only scripts and `<style>` elements carrying it. Neither directive
+allows `'unsafe-inline'`. Payload admin and the API keep the baseline from ADR-029.
+
+**Rationale.** Next applies the nonce to its own scripts when it finds one in the request
+headers, so the application code did not change. The one real question was inline
+styles. The obvious assumption was that dnd-kit's hidden screen-reader text, which it
+styles inline, needed `style-src-attr 'unsafe-inline'`. Testing showed it does not:
+dnd-kit renders that text on the client after mount, and React sets client-side styles
+through the CSSOM, which CSP does not police. So the stricter policy holds.
+
+**Consequences.**
+
+- Every page must be rendered per request, or it has no nonce. The guest site and
+  dashboard already were. The two statically prerendered pages, `/_not-found` and
+  `/_global-error`, render their HTML but their scripts are blocked, which a 404 page
+  does not need.
+- Payload admin is excluded because it ships inline scripts of its own. It is admin-only
+  and kept out of search engines.
+- Prefetched pages bypass the proxy, as Next recommends, because a cached prefetch would
+  carry a stale nonce. The dashboard's real authorisation is server-side (ADR-011), so
+  the coarse redirect skipping a prefetch changes nothing.
