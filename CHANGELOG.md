@@ -333,3 +333,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `<style>` elements carrying that request's nonce run, and neither allows
   `'unsafe-inline'`. Payload admin and the API keep the baseline policy. Supersedes the
   partial policy from Phase 9 (ADR-030).
+
+### Fixed (not-found pages)
+
+- The guest site and dashboard had no not-found page of their own, so a missing page
+  showed Next's generic 404. Each now has one in its own style.
