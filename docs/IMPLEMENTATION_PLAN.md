@@ -475,9 +475,16 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       removed. Before this, an admin could do both through `/admin`, and the user guide
       claimed otherwise
 - [ ] Keep this file, ADRs, and docs current as work lands
-- [ ] **Complete the Content-Security-Policy.** `script-src` and `style-src` are unset
-      (ADR-029). Doing it properly means a per-request nonce threaded through `proxy.ts`
-      and both root layouts, plus an audit of Payload's admin bundle
+- [x] **Content-Security-Policy completed (ADR-030).** A fresh nonce per page from
+      `src/proxy.ts`; scripts and `<style>` elements must carry it, with no
+      `'unsafe-inline'` for either. An E2E test records every browser violation across
+      the guest site, live photo stream, and dashboard, and was checked by breaking the
+      policy on purpose. CI then caught what local runs could not: neither the guest site
+      nor the dashboard had a not-found page, so `notFound()` (for example `/menu` with no
+      courses) fell back to Next's default, whose inline `<style>` the policy blocks. Both
+      now have their own, and the violation tests visit a 404 on purpose
+- [ ] The guest nav shows "Menu" whenever the menu feature is on, even with no courses,
+      so it can link to a 404. The nav should know whether there is anything to show
 - [ ] Media on S3/R2 rather than a local volume, per `docs/CLIENT_DEPLOYMENT.md` §4
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
