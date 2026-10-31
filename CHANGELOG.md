@@ -351,3 +351,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Migration `media_storage_prefix` adds a `prefix` column to `media`. Run migrations
   when upgrading (`docs/CLIENT_DEPLOYMENT.md` §7).
+
+### Added (QR invitations)
+
+- A QR code for each household's invitation link, shown when the link is created, with
+  SVG and PNG downloads for printing. Generated in the browser, so the token never leaves
+  it. Replacing a link now warns that it also stops any printed code working.

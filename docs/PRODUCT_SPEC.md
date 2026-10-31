@@ -169,7 +169,7 @@ In: organiser auth, wedding settings, dashboard, guests and parties, CSV, invita
 tokens, RSVP, wedding website, menu, seating, itinerary, contacts, photo queue with SSE,
 email and SMS notifications, Docker deployment.
 
-Out (backlog): multiple themes, QR invitations, WhatsApp, guest check-in, guest photo
+Out (backlog): multiple themes, WhatsApp, guest check-in, guest photo
 uploads, shared galleries, checklists, vendors, budget, gift registry, multi-event
 weddings, multilingual, PWA, push notifications, analytics, SaaS multi-tenancy.
 
