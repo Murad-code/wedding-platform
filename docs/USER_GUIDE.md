@@ -163,6 +163,19 @@ Three things to know:
   like a key. It only ever opens that one household — never anyone else's details, and
   never the guest list.
 
+### QR codes for printed invitations
+
+When you create a link you also get a QR code for it, with **Download SVG** and
+**Download PNG** buttons. SVG is the one to send to a printer or stationer, because it
+stays sharp at any size. Each code opens that household's invitation, so a guest can scan
+their card instead of typing anything.
+
+- **Download it when you create the link.** Like the link, it can't be shown again later.
+- **A printed card is a key**, exactly like the link. Anyone holding it can answer that
+  household's invitation.
+- **Creating a new link stops the old QR code working**, including one already printed on
+  a card. Only replace a link once cards have gone out if you mean to.
+
 ---
 
 ## 6. How guests reply

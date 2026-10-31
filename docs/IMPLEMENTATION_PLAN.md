@@ -491,6 +491,11 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       an upload and anonymous fetch on a production build, and the same on the actual
       Docker image. CI runs the storage test against the same pinned server
 - [ ] Verify against a real Cloudflare R2 bucket. Needs an account and a scoped key
+- [x] **QR codes for printed invitations (ADR-032).** One per household, made in the
+      browser when the link is issued, downloadable as SVG and PNG. The E2E test decodes
+      the downloaded PNG, opens it in a fresh browser, and lands on that household's
+      invitation; it also asserts the token is never sent anywhere while the code is made
+- [ ] Guest check-in: deferred by the owner on 2026-10-31
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
 `ON DELETE SET NULL` foreign key. Deleting a party through the app is safe — a hook
@@ -500,7 +505,7 @@ anyone writes a maintenance script.
 
 ## Backlog
 
-Themes · custom domains · QR invitations · WhatsApp · check-in · guest photo uploads ·
+Themes · custom domains · WhatsApp · check-in · guest photo uploads ·
 galleries · checklists · vendors · budget · registry · multi-event · multilingual · PWA ·
 push · analytics · SaaS multi-tenancy.
 

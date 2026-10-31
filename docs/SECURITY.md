@@ -58,6 +58,16 @@ An unknown token and a rotated token both return the same generic "invitation no
 page, and both take a comparable amount of time, so responses do not distinguish
 "never existed" from "revoked".
 
+### QR codes
+
+A household's QR code encodes its invitation link, so a printed card is a credential in
+the same way the link is. Because only the token's hash is stored, the code can only be
+made when the link is issued, and it is made **in the organiser's browser** from the link
+already on screen. The token is never sent back to the server or to any third-party QR
+service; an E2E test records every request made while the code is generated and
+downloaded and asserts none contains it. Issuing a new link invalidates the old code,
+printed or not, and the dashboard says so beside the button.
+
 ## 3. Guest enumeration
 
 The brief requires no publicly enumerable guest directory, and we go further:

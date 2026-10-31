@@ -670,3 +670,28 @@ land at the bucket root.
 **Consequence.** MinIO no longer publishes community Docker images, so local development
 and CI use `adobe/s3mock`, pinned to a version, behind an opt-in Compose profile. A
 half-configured bucket stops the app at start-up instead of falling back to disk.
+
+---
+
+## ADR-032 — Invitation QR codes are made in the browser, once
+
+**Status:** Accepted (2026-10-31)
+
+**Context.** The owner wanted QR codes on printed invitations, one per household,
+downloadable as SVG and PNG. A code encodes the invitation link, but the link's token is
+stored only as a hash (ADR-005), so the server cannot reproduce it later.
+
+**Decision.** The code is generated in the organiser's browser, with the `qrcode`
+library, from the link shown at the moment it is issued. Error correction is level Q. No
+server endpoint produces QR codes, and no external service is used.
+
+**Rationale.** Generating server-side would mean either storing the raw token or sending
+it back to the server in a request, both of which undo ADR-005. A third-party QR API
+would hand every household's credential to a stranger. Level Q survives a quarter of the
+code being damaged, which matters for a card that gets folded and photographed in poor
+light; a unit test obscures part of a code and fails at level L.
+
+**Consequences.** The code cannot be downloaded again later, exactly like the link. To
+get a new one, issue a new link, which stops the old card working; the dashboard says so
+next to the button. Guest check-in was considered alongside this and deferred by the
+owner.
