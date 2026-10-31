@@ -54,6 +54,14 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # A plugin that adds admin components without a regenerated import map only shows
+      # up as a broken /admin page twenty minutes later, in E2E.
+      - name: Generated Payload files are up to date
+        run: |
+          pnpm generate:importmap
+          pnpm generate:types
+          git diff --exit-code -- 'src/app/(payload)/admin/importMap.js' src/payload-types.ts
+
       - name: Unit and integration tests
         run: pnpm test
 
