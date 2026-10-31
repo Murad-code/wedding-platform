@@ -18,5 +18,17 @@ services:
       timeout: 5s
       retries: 10
 
+  # Opt-in local S3, for working on or testing media storage:
+  #   docker compose --profile s3 up -d s3
+  # MinIO no longer publishes community images, so this is Adobe's S3 test server.
+  s3:
+    image: adobe/s3mock:4.10.0
+    profiles: ['s3']
+    restart: unless-stopped
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: wedding-media
+    ports:
+      - '9090:9090'
+
 volumes:
   pgdata:
