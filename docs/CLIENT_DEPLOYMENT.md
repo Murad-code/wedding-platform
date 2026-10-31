@@ -80,9 +80,30 @@ network or TLS, and automated backups.
 
 ## 4. Configure media storage
 
-Development writes to local disk. Production uses S3-compatible storage; give each client
-their **own bucket** (preferred) or at minimum an isolated prefix with credentials scoped
-to it.
+Uploaded photos go to local disk (the `media` volume) unless `S3_BUCKET` is set, in which
+case they go to any S3-compatible store: Cloudflare R2, AWS S3, Backblaze B2, and so on.
+A container's disk is replaced on every redeploy and is not covered by the database
+backup, so **production should use a bucket.**
+
+For each wedding:
+
+1. Create a **private** bucket of its own. Never share one between weddings.
+2. Create an access key scoped to that bucket only, with read, write, and delete.
+3. Set the `S3_` variables in `deploy/.env` (see `deploy/.env.example`). For R2,
+   `S3_REGION=auto` and `S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`.
+
+The bucket stays private. Guests' browsers never talk to it: files are served through
+the wedding's own `/api/media/...` route, so they keep the sandboxed CSP and Payload's
+access control (ADR-031). If `S3_BUCKET` is set and any other `S3_` variable is missing,
+the app refuses to start rather than quietly writing to disk.
+
+To work against a local S3 server in development:
+
+```bash
+docker compose --profile s3 up -d s3
+```
+
+then uncomment the `S3_` block in `.env`.
 
 ## 5. Configure the domain
 

@@ -639,3 +639,34 @@ through the CSSOM, which CSP does not police. So the stricter policy holds.
 - Prefetched pages bypass the proxy, as Next recommends, because a cached prefetch would
   carry a stale nonce. The dashboard's real authorisation is server-side (ADR-011), so
   the coarse redirect skipping a prefetch changes nothing.
+
+---
+
+## ADR-031 — Media in a private bucket, served through the app
+
+**Status:** Accepted (2026-10-31)
+
+**Context.** Uploads lived on a local volume, which is replaced on redeploy and is not in
+the database backup. Moving them to S3-compatible storage raises two questions: whether
+browsers fetch images from the bucket directly, and how to keep one schema across
+deployments that do and do not use a bucket.
+
+**Decision.** `@payloadcms/storage-s3`, enabled by `S3_BUCKET`. The bucket is private, and
+files are served through Payload's `/api/media/file/...` route rather than public bucket
+URLs. The media collection gets an explicit empty `prefix`, and `alwaysInsertFields` is
+on.
+
+**Rationale.** Serving through the app costs bandwidth on the application server, which at
+the scale of one wedding's photographs is negligible. In return the bucket never needs
+public access, every image response keeps the sandboxed CSP that media is served with, and
+access control stays in one place. The plugin adds a `prefix` column, and a disk
+deployment and a bucket deployment must have the same schema or the committed migrations
+are wrong for one of them. That takes both settings, which was found by diffing the schema
+in each mode rather than trusting the option's name: `alwaysInsertFields` adds the column
+when S3 is off, but when S3 is on the plugin only adds it if a prefix is defined. With an
+empty prefix, both modes report no schema changes against the migration, and objects still
+land at the bucket root.
+
+**Consequence.** MinIO no longer publishes community Docker images, so local development
+and CI use `adobe/s3mock`, pinned to a version, behind an opt-in Compose profile. A
+half-configured bucket stops the app at start-up instead of falling back to disk.

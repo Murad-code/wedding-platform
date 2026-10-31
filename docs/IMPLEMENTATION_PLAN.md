@@ -480,7 +480,12 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       `'unsafe-inline'` for either. An E2E test records every browser violation across
       the guest site, live photo stream, and dashboard, and was checked by breaking the
       policy on purpose
-- [ ] Media on S3/R2 rather than a local volume, per `docs/CLIENT_DEPLOYMENT.md` §4
+- [x] **Media in S3-compatible storage (ADR-031)**, enabled by `S3_BUCKET`, otherwise
+      local disk. Private bucket, served through `/api/media`. Verified against a local S3
+      server through the integration test (checked by switching storage off on purpose),
+      an upload and anonymous fetch on a production build, and the same on the actual
+      Docker image. CI runs the storage test against the same pinned server
+- [ ] Verify against a real Cloudflare R2 bucket. Needs an account and a scoped key
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
 `ON DELETE SET NULL` foreign key. Deleting a party through the app is safe — a hook

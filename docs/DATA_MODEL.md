@@ -166,6 +166,7 @@ erDiagram
     MEDIA {
         uuid   id PK
         string filename
+        string prefix
         string alt
         int    filesize
         string mimeType
@@ -305,6 +306,12 @@ Because the body contains the guest's name, deleting a guest deletes their notif
 
 `nextAttemptAt` drives both the retry backoff and the "is anything waiting" query. A row
 with no `nextAttemptAt` will not be tried again.
+
+### Media
+
+Uploaded images. Stored on local disk or in an S3-compatible bucket depending on
+`S3_BUCKET` (ADR-031). `prefix` is the storage plugin's object-key prefix. It exists in
+the schema whether or not S3 is enabled, so one migration fits every deployment.
 
 ### AuditEvents
 
