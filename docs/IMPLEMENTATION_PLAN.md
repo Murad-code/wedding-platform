@@ -489,7 +489,10 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       local disk. Private bucket, served through `/api/media`. Verified against a local S3
       server through the integration test (checked by switching storage off on purpose),
       an upload and anonymous fetch on a production build, and the same on the actual
-      Docker image. CI runs the storage test against the same pinned server
+      Docker image. CI runs the storage test against the same pinned server. CI also
+      caught that `/admin` broke, because the plugin's admin components were not in the
+      regenerated import map; my checks were all API-level. CI now fails fast when
+      Payload's generated files are stale
 - [ ] Verify against a real Cloudflare R2 bucket. Needs an account and a scoped key
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
