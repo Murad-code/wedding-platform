@@ -338,3 +338,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The guest site and dashboard had no not-found page of their own, so a missing page
   showed Next's generic 404. Each now has one in its own style.
+
+### Added (media storage)
+
+- Uploaded media can live in any S3-compatible bucket (Cloudflare R2, AWS S3, and so on)
+  by setting `S3_BUCKET` and the other `S3_` variables. Without them, uploads stay on
+  local disk as before. The bucket stays private; files are served through `/api/media`.
+- A half-configured bucket stops the app at start-up instead of silently using disk.
+- Opt-in local S3 server for development: `docker compose --profile s3 up -d s3`.
+
+### Changed
+
+- Migration `media_storage_prefix` adds a `prefix` column to `media`. Run migrations
+  when upgrading (`docs/CLIENT_DEPLOYMENT.md` §7).

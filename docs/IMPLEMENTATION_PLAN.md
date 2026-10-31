@@ -485,7 +485,15 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       now have their own, and the violation tests visit a 404 on purpose
 - [ ] The guest nav shows "Menu" whenever the menu feature is on, even with no courses,
       so it can link to a 404. The nav should know whether there is anything to show
-- [ ] Media on S3/R2 rather than a local volume, per `docs/CLIENT_DEPLOYMENT.md` §4
+- [x] **Media in S3-compatible storage (ADR-031)**, enabled by `S3_BUCKET`, otherwise
+      local disk. Private bucket, served through `/api/media`. Verified against a local S3
+      server through the integration test (checked by switching storage off on purpose),
+      an upload and anonymous fetch on a production build, and the same on the actual
+      Docker image. CI runs the storage test against the same pinned server. CI also
+      caught that `/admin` broke, because the plugin's admin components were not in the
+      regenerated import map; my checks were all API-level. CI now fails fast when
+      Payload's generated files are stale
+- [ ] Verify against a real Cloudflare R2 bucket. Needs an account and a scoped key
 
 **Noted, not yet acted on.** Payload generates `guests.party_id` as `NOT NULL` with an
 `ON DELETE SET NULL` foreign key. Deleting a party through the app is safe — a hook
