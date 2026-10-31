@@ -1,7 +1,9 @@
 import 'dotenv/config'
 
 import config from '@payload-config'
-import { getPayload, type Payload } from 'payload'
+import { getPayload } from 'payload'
+
+import { ensure, ensureWeddingBaseline } from './fixtures/wedding'
 
 /**
  * Deterministic development data for the demo wedding.
@@ -25,33 +27,6 @@ function assertNotProduction() {
     console.error('Seed data must never be written to a production deployment.')
     process.exit(1)
   }
-}
-
-/** Finds a document by a unique-ish field, or creates it. Never updates. */
-async function ensure(
-  payload: Payload,
-  collection: Parameters<Payload['find']>[0]['collection'],
-  where: Record<string, unknown>,
-  data: Record<string, unknown>,
-): Promise<{ id: number }> {
-  const existing = await payload.find({
-    collection,
-    where: where as never,
-    limit: 1,
-    depth: 0,
-    overrideAccess: true,
-  })
-
-  const found = existing.docs[0]
-  if (found) return { id: found.id }
-
-  const created = await payload.create({
-    collection,
-    data: data as never,
-    overrideAccess: true,
-  })
-
-  return { id: created.id }
 }
 
 type SeedGuest = {
@@ -166,6 +141,8 @@ async function main() {
 
   const payload = await getPayload({ config })
 
+  await ensureWeddingBaseline(payload, { overwriteSettings: false })
+
   for (const party of PARTIES) {
     const created = await ensure(
       payload,
@@ -230,7 +207,15 @@ async function main() {
   }
 
   const counts = await Promise.all(
-    (['invitation-parties', 'guests', 'photo-groups'] as const).map(async (collection) => {
+    (
+      [
+        'invitation-parties',
+        'guests',
+        'photo-groups',
+        'itinerary-items',
+        'wedding-contacts',
+      ] as const
+    ).map(async (collection) => {
       const result = await payload.count({ collection, overrideAccess: true })
       return `${collection}: ${result.totalDocs}`
     }),
