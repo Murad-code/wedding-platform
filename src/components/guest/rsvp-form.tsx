@@ -178,7 +178,7 @@ export function RsvpForm({
                     onChange={() => setAnswer(guest.id, { rsvpStatus: 'attending' })}
                     tone="attending"
                   >
-                    Yes, I'll be there
+                    Yes, I&apos;ll be there
                   </ChoiceButton>
                   <ChoiceButton
                     name={`status-${guest.id}`}
@@ -186,7 +186,7 @@ export function RsvpForm({
                     onChange={() => setAnswer(guest.id, { rsvpStatus: 'declined' })}
                     tone="declined"
                   >
-                    Sorry, I can't make it
+                    Sorry, I can&apos;t make it
                   </ChoiceButton>
                 </div>
 
