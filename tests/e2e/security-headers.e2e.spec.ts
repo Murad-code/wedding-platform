@@ -117,6 +117,13 @@ test.describe('content security policy', () => {
     await page.goto('/photos')
     await expect(page.locator('[data-connection="live"]')).toBeVisible()
 
+    // A missing page must be clean too. CI caught Next's default 404 here, with its inline
+    // <style>, only because CI's database had no menu and /menu returned not found.
+    await page.goto(`/photos/${TOKEN_SHAPED}`)
+    await expect(
+      page.getByRole('heading', { level: 1, name: /couldn’t find that page/i }),
+    ).toBeVisible()
+
     expect(await violations()).toEqual([])
   })
 
@@ -136,6 +143,9 @@ test.describe('content security policy', () => {
 
     // dnd-kit hides its screen-reader instructions with an inline style set from script.
     // If the policy blocked that, the instructions would appear on the page.
+    await page.goto('/dashboard/guests/999999999')
+    await expect(page.getByRole('heading', { level: 1, name: /page not found/i })).toBeVisible()
+
     await page.goto('/dashboard/seating')
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     const instructions = page.getByText(/to pick up a draggable item/i)
