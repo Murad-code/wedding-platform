@@ -39,12 +39,17 @@ Three kinds of account:
 | See everything in the dashboard                    | ✅     | ✅        | ✅    |
 | Change anything — guests, seating, menu, the queue | —      | ✅        | ✅    |
 | Send messages to guests                            | —      | ✅        | ✅    |
-| Create and remove organiser accounts, change roles | —      | —         | ✅    |
+| Manage the team at `/dashboard/team`               | —      | —         | ✅    |
+| Change your own password                           | ✅     | ✅        | ✅    |
 | Reach `/admin`                                     | —      | —         | ✅    |
 
-Nobody can change their own role, including an admin editing their own profile. That is
-deliberate: it is the difference between "a viewer account" and "a viewer account until
-somebody works out how to edit it".
+Two safety rails, enforced everywhere an account can be changed:
+
+- **Nobody can change their own role or remove their own account**, admins included. Ask
+  another admin. It is the difference between "a viewer account" and "a viewer account
+  until somebody works out how to edit it".
+- **There is always at least one admin.** The last admin cannot be demoted or removed,
+  otherwise nobody could manage the team again.
 
 ### Creating accounts
 
@@ -55,11 +60,18 @@ command line:
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at-least-12-characters' ADMIN_NAME='Your Name' pnpm create-admin
 ```
 
-After that, an admin adds everyone else through `/admin` → Users. There is not yet a
-friendly screen for this in the dashboard itself — it is on the list.
+After that, an admin manages everyone else at **`/dashboard/team`**: add someone with a
+starting password, change their role, set a new password if they forget theirs, or
+remove them. Setting a new password signs that person out everywhere.
 
-`/admin` is a technical maintenance screen restricted to admins. Apart from adding
-accounts, you should never need it: everything you actually do lives in `/dashboard`.
+### Your account
+
+**`/dashboard/account`** shows your role and lets you change your password. You need
+your current password to do it, and you will be signed out everywhere and asked to sign
+in again with the new one.
+
+`/admin` is a technical maintenance screen restricted to admins. You should never need it:
+everything you actually do lives in `/dashboard`.
 
 ---
 
