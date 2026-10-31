@@ -30,7 +30,7 @@ describe('SetupChecklist', () => {
 
     // Onboarding that says only "add guests" does not tell a nervous couple why.
     expect(screen.getByText(/drive the whole guest website/i)).toBeInTheDocument()
-    expect(screen.getByText(/households respond together/i)).toBeInTheDocument()
+    expect(screen.getByText(/households reply together/i)).toBeInTheDocument()
   })
 
   it('links each step to where the work happens', () => {

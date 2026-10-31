@@ -58,8 +58,9 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done & verified
 - [x] Vitest 4 + React Testing Library
 - [x] Playwright 1.62 (Chromium + WebKit; guest experience is iPhone-first)
 - [x] `pnpm verify` composite script — **passing**
-- [~] GitHub Actions CI written (lint, typecheck, test, build, E2E, secret scan);
-  not yet executed — the repository has no remote
+- [~] GitHub Actions CI (lint, typecheck, test, build, E2E, image, secret scan). Runs on
+  GitHub since the repository was pushed; red on every run until the 2026-10-31 repair
+  below, and not yet confirmed green
 - [x] Secret scanning step (gitleaks) in CI
 
 **Phase 0 verification (2026-08-29):** `pnpm verify` passes end to end; Playwright green
@@ -425,8 +426,7 @@ exact row counts → project torn down with its volumes.
 - Caddy and TLS. The Caddyfile is written and reviewed but needs a real domain and a
   public host to exercise; `flush_interval -1` for SSE in particular is reasoned, not
   observed.
-- CI has still never executed. There is no git remote, so every workflow in
-  `.github/workflows/ci.yml` — including the new image job — is unrun.
+- CI. Superseded: see "CI repair (2026-10-31)" under Cross-cutting.
 - S3/R2 media storage. The default deployment uses a local volume.
 
 **Phase 9 verification (2026-08-30):** `pnpm verify` passes; 415 unit and integration
@@ -436,11 +436,31 @@ tests, 220 Playwright tests with 24 deliberate skips.
 
 ## Cross-cutting
 
-- [~] Deterministic seed data — `pnpm seed` restores 6 parties, 16 guests across every
-  RSVP state (including a plus-one, children, an infant, dietary, allergy, and
-  accessibility cases) and 5 photo groups. Idempotent, so it can be re-run to repair a
-  partially wiped development database. Menu, tables, itinerary, and contacts are not
-  seeded yet — they were already present when this landed
+### CI repair (2026-10-31)
+
+Once the repository was pushed, every CI run failed. Each local "all green" report had
+been true only against a hand-populated development database.
+
+- [x] **E2E (38 failures):** the suite assumed the demo wedding already existed. CI
+      starts empty, so every page gated on `isConfigured` rendered "not configured yet".
+      Global setup now writes the baseline from `scripts/fixtures/wedding.ts`.
+- [x] **Secret scan:** flagged a fake token hard-coded in two unit tests. Generated at
+      runtime now. The latest run also failed to scan at all, because the force-pushed
+      range started at the root commit (`root^` does not exist); a one-off, not a config
+      fault.
+- [x] **Lint:** unescaped apostrophes from the British English copy rewrite.
+- [x] **Stale tests from that rewrite**, which CI never reached because lint failed
+      first: a unit test expecting "respond" and an E2E label expecting an em dash.
+- [ ] Confirm CI green on GitHub.
+
+Verified locally against an empty scratch database, as CI sees it: the four specs that
+failed in CI (88 tests across both projects) and the RSVP spec all pass.
+
+- [~] Deterministic seed data. `pnpm seed` restores the demo wedding's settings,
+  itinerary, and contacts (shared with the E2E setup via `scripts/fixtures/wedding.ts`),
+  6 parties, 16 guests across every RSVP state (including a plus-one, children, an infant,
+  dietary, allergy, and accessibility cases), and 5 photo groups. Idempotent. Menu and
+  tables are not seeded yet
 - [x] Seed script guarded against running in production — refuses on `NODE_ENV=production`
 - [ ] `pnpm db:reset` for local development — E2E runs currently accumulate guest rows
       indefinitely, which makes a dev database noisy over time (harmless, but untidy)

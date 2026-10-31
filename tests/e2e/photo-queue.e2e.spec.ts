@@ -155,7 +155,7 @@ test.describe('planning the photographs', () => {
     await createGroups(page, [id])
 
     await page.goto('/dashboard/photos')
-    await page.getByLabel(`Add someone to ${id}`).selectOption({ label: `${guest} — ${id}` })
+    await page.getByLabel(`Add someone to ${id}`).selectOption({ label: `${guest} (${id})` })
     await page.getByRole('button', { name: 'Add', exact: true }).click()
 
     await expect(page.getByText('1 person')).toBeVisible()

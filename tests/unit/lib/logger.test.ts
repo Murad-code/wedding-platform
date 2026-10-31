@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { generateInvitationToken } from '@/domain/invitations/token'
 import { reportError, setErrorReporter } from '@/lib/error-reporting'
 import { logger } from '@/lib/logger'
 
-const token = 'rOHTjF42WdVkX8wILbWoeitKHjI_XXrQqhxTFRWkkCE'
+// Generated rather than written out: a literal token-shaped string trips the CI secret scan.
+const token = generateInvitationToken()
 
 function capture(method: 'log' | 'warn' | 'error') {
   return vi.spyOn(console, method).mockImplementation(() => {})

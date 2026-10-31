@@ -3,11 +3,13 @@ import 'dotenv/config'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
+import { ensureWeddingBaseline } from '../../scripts/fixtures/wedding'
+
 import { allTestAccounts } from './support/accounts'
 
 /**
- * Ensures the organiser accounts the E2E suite signs in with exist, and clears their
- * accumulated sessions.
+ * Puts the database in the state the suite expects: the demo wedding, and organiser
+ * accounts with their accumulated sessions cleared.
  *
  * Refuses to run in production: this creates known-credential accounts, which would be
  * a serious vulnerability in a real wedding deployment.
@@ -18,6 +20,9 @@ export default async function globalSetup() {
   }
 
   const payload = await getPayload({ config })
+
+  // The suite asserts on this exact wedding, and CI starts from an empty database.
+  await ensureWeddingBaseline(payload, { overwriteSettings: true })
 
   for (const account of allTestAccounts()) {
     const existing = await payload.find({

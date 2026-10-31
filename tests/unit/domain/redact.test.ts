@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { generateInvitationToken } from '@/domain/invitations/token'
 import {
   isSensitiveKey,
   redact,
@@ -8,7 +9,8 @@ import {
   TOKEN_REDACTED,
 } from '@/domain/logging/redact'
 
-const token = 'rOHTjF42WdVkX8wILbWoeitKHjI_XXrQqhxTFRWkkCE'
+// Generated rather than written out: a literal token-shaped string trips the CI secret scan.
+const token = generateInvitationToken()
 
 describe('isSensitiveKey', () => {
   it('catches the obvious ones', () => {
