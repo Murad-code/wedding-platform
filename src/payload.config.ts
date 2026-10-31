@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
@@ -22,6 +23,7 @@ import { Users } from './collections/Users'
 import { WeddingContacts } from './collections/WeddingContacts'
 import { PhotoQueueState } from './globals/PhotoQueueState'
 import { WeddingSettings } from './globals/WeddingSettings'
+import { s3StorageFromEnv } from './lib/storage'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -66,5 +68,5 @@ export default buildConfig({
     push: process.env.NODE_ENV !== 'production',
   }),
   sharp,
-  plugins: [],
+  plugins: [s3Storage(s3StorageFromEnv(process.env))],
 })
