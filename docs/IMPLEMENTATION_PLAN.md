@@ -451,7 +451,8 @@ been true only against a hand-populated development database.
 - [x] **Lint:** unescaped apostrophes from the British English copy rewrite.
 - [x] **Stale tests from that rewrite**, which CI never reached because lint failed
       first: a unit test expecting "respond" and an E2E label expecting an em dash.
-- [ ] Confirm CI green on GitHub.
+- [x] CI green on GitHub for the first time: all three jobs (verify including E2E, image,
+      secret scan) pass on the fix, PR #1.
 
 Verified locally against an empty scratch database, as CI sees it: the four specs that
 failed in CI (88 tests across both projects) and the RSVP spec all pass.
