@@ -334,6 +334,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `'unsafe-inline'`. Payload admin and the API keep the baseline policy. Supersedes the
   partial policy from Phase 9 (ADR-030).
 
+### Fixed (not-found pages)
+
+- The guest site and dashboard had no not-found page of their own, so a missing page
+  showed Next's generic 404. Each now has one in its own style.
+
 ### Added (media storage)
 
 - Uploaded media can live in any S3-compatible bucket (Cloudflare R2, AWS S3, and so on)

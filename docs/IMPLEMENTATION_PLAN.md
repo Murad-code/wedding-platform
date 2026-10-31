@@ -479,7 +479,12 @@ failed in CI (88 tests across both projects) and the RSVP spec all pass.
       `src/proxy.ts`; scripts and `<style>` elements must carry it, with no
       `'unsafe-inline'` for either. An E2E test records every browser violation across
       the guest site, live photo stream, and dashboard, and was checked by breaking the
-      policy on purpose
+      policy on purpose. CI then caught what local runs could not: neither the guest site
+      nor the dashboard had a not-found page, so `notFound()` (for example `/menu` with no
+      courses) fell back to Next's default, whose inline `<style>` the policy blocks. Both
+      now have their own, and the violation tests visit a 404 on purpose
+- [ ] The guest nav shows "Menu" whenever the menu feature is on, even with no courses,
+      so it can link to a 404. The nav should know whether there is anything to show
 - [x] **Media in S3-compatible storage (ADR-031)**, enabled by `S3_BUCKET`, otherwise
       local disk. Private bucket, served through `/api/media`. Verified against a local S3
       server through the integration test (checked by switching storage off on purpose),
