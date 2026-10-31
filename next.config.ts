@@ -3,6 +3,8 @@ import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { BASELINE_CSP } from './src/domain/security/csp'
+
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** Applied wherever an invitation token appears in the URL path (docs/SECURITY.md §2). */
@@ -11,27 +13,6 @@ const TOKEN_URL_HEADERS = [
   { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
 ]
-
-/**
- * A deliberately partial Content-Security-Policy.
- *
- * These four directives are the ones that can be set without breaking anything: they stop
- * a `<base>` tag rewriting every relative URL, stop an injected form posting elsewhere,
- * remove plugin embedding, and replace `X-Frame-Options` with its modern equivalent.
- *
- * `script-src` and `style-src` are **not** set. Doing so properly needs a per-request
- * nonce threaded through the proxy and both root layouts, and Payload's admin bundle
- * would need auditing alongside it. Setting them loosely — with `unsafe-inline` — would
- * be worse than nothing: it would look like a policy while permitting exactly the
- * injection a policy exists to stop. Recorded as outstanding in
- * `docs/IMPLEMENTATION_PLAN.md` rather than pretended.
- */
-const BASELINE_CSP = [
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-].join('; ')
 
 const nextConfig: NextConfig = {
   // Standalone output keeps the production image small (see docs/CLIENT_DEPLOYMENT.md).
@@ -47,8 +28,12 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Content-Security-Policy', value: BASELINE_CSP },
         ],
+      },
+      {
+        // Pages get their nonce-based policy from the proxy, which does not run on the API.
+        source: '/api/:path*',
+        headers: [{ key: 'Content-Security-Policy', value: BASELINE_CSP }],
       },
       {
         // Invitation tokens live in the URL path. Keep them out of referrers,
